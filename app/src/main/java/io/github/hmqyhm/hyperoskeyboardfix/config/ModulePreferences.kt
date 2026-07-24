@@ -78,6 +78,23 @@ class ModulePreferences(private val context: Context) {
             .apply()
     }
 
+    fun recordLaunchAndShouldShowStarPrompt(): Boolean {
+        if (preferences.getBoolean(ConfigKeys.STAR_PROMPT_SHOWN, false)) {
+            return false
+        }
+        val launchCount = preferences.getInt(ConfigKeys.APP_LAUNCH_COUNT, 0) + 1
+        preferences.edit()
+            .putInt(ConfigKeys.APP_LAUNCH_COUNT, launchCount)
+            .apply()
+        return launchCount == STAR_PROMPT_LAUNCH_COUNT
+    }
+
+    fun markStarPromptShown() {
+        preferences.edit()
+            .putBoolean(ConfigKeys.STAR_PROMPT_SHOWN, true)
+            .apply()
+    }
+
     private fun initializeDefaultWhitelist() {
         if (preferences.getBoolean(KEY_DEFAULTS_INITIALIZED, false)) return
         val installedDefaults = DEFAULT_REMOTE_APPS.filterTo(linkedSetOf()) { packageName ->
@@ -165,6 +182,7 @@ class ModulePreferences(private val context: Context) {
         private const val KEY_SHORTCUT_DEFAULTS_INITIALIZED =
             "shortcut_defaults_initialized"
         private const val LEGACY_FILE_NAME = "hyperos_keyboard_fix"
+        private const val STAR_PROMPT_LAUNCH_COUNT = 3
 
         val SHORTCUTS = listOf(
             ShortcutOption("Meta + Tab", ConfigKeys.SHORTCUT_META_TAB),

@@ -13,7 +13,12 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -22,18 +27,24 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.res.stringResource
 import io.github.hmqyhm.hyperoskeyboardfix.config.ModulePreferences
+import io.github.hmqyhm.hyperoskeyboardfix.config.ProjectLinks
 import io.github.hmqyhm.hyperoskeyboardfix.ui.home.HomeScreen
 import io.github.hmqyhm.hyperoskeyboardfix.ui.settings.MainSettingsScreen
 import io.github.hmqyhm.hyperoskeyboardfix.ui.settings.WhitelistScreen
 import io.github.hmqyhm.hyperoskeyboardfix.ui.theme.HyperoskeyboardfixTheme
 import java.util.concurrent.CancellationException
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collect
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val initialPreferences = ModulePreferences(applicationContext)
+        val showStarPromptOnLaunch = savedInstanceState == null &&
+            initialPreferences.recordLaunchAndShouldShowStarPrompt()
         applyAppLanguage(initialPreferences.languageTag())
         enableEdgeToEdge()
         setContent {
@@ -41,6 +52,9 @@ class MainActivity : ComponentActivity() {
                 val preferences = remember { ModulePreferences(applicationContext) }
                 var page by rememberSaveable { mutableStateOf(AppPage.HOME) }
                 var backProgress by remember { mutableFloatStateOf(0f) }
+                var showStarPrompt by rememberSaveable {
+                    mutableStateOf(showStarPromptOnLaunch)
+                }
 
                 PredictiveBackHandler(enabled = page != AppPage.HOME) { events ->
                     try {
@@ -98,6 +112,13 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 }
+
+                if (showStarPrompt) {
+                    StarPromptDialog(
+                        preferences = preferences,
+                        onDismiss = { showStarPrompt = false },
+                    )
+                }
             }
         }
     }
@@ -111,8 +132,60 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@Composable
+private fun StarPromptDialog(
+    preferences: ModulePreferences,
+    onDismiss: () -> Unit,
+) {
+    val uriHandler = LocalUriHandler.current
+    var secondsRemaining by rememberSaveable {
+        mutableStateOf(STAR_PROMPT_TIMEOUT_SECONDS)
+    }
+
+    LaunchedEffect(Unit) {
+        preferences.markStarPromptShown()
+        repeat(STAR_PROMPT_TIMEOUT_SECONDS) {
+            delay(1_000L)
+            secondsRemaining -= 1
+        }
+        onDismiss()
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(stringResource(R.string.star_prompt_title))
+        },
+        text = {
+            Text(stringResource(R.string.star_prompt_message))
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    uriHandler.openUri(ProjectLinks.GITHUB_REPOSITORY)
+                    onDismiss()
+                },
+            ) {
+                Text(stringResource(R.string.star_prompt_github))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(
+                    stringResource(
+                        R.string.star_prompt_later,
+                        secondsRemaining.coerceAtLeast(0),
+                    ),
+                )
+            }
+        },
+    )
+}
+
 private enum class AppPage {
     HOME,
     SETTINGS,
     WHITELIST,
 }
+
+private const val STAR_PROMPT_TIMEOUT_SECONDS = 5

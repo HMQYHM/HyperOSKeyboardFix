@@ -36,6 +36,10 @@
     <string name="language_english">English</string>
     <string name="project_home">Open project homepage</string>
     <string name="project_home_pending">Source code, releases, and issue tracker</string>
+    <string name="star_prompt_title">Enjoying this app?</string>
+    <string name="star_prompt_message">Would you give it a little Star on GitHub? 🥺 It would mean a lot to me.</string>
+    <string name="star_prompt_github">Star on GitHub</string>
+    <string name="star_prompt_later">Maybe later (%1$d s)</string>
     <string name="whitelist_title">Choose active apps</string>
     <string name="selected_short">%1$d selected</string>
     <string name="search_apps">Search app name or package</string>

@@ -36,6 +36,10 @@
     <string name="language_english">English</string>
     <string name="project_home">打开项目主页</string>
     <string name="project_home_pending">查看源代码、版本发布与问题反馈</string>
+    <string name="star_prompt_title">喜欢这个软件吗？</string>
+    <string name="star_prompt_message">喜欢的话，可以去 GitHub 点个小小的 Star 吗？🥺 这对我来说非常重要。</string>
+    <string name="star_prompt_github">去 GitHub 点 Star</string>
+    <string name="star_prompt_later">下次一定（%1$d 秒）</string>
     <string name="whitelist_title">选择生效应用</string>
     <string name="selected_short">已选 %1$d</string>
     <string name="search_apps">搜索应用名称或包名</string>

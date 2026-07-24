@@ -25,7 +25,7 @@ desktop applications on HyperOS 3.
 
 ### 安装
 
-1. 从 [Releases](https://github.com/HMQYHM/HyperOS-Keyboard-Fix/releases)
+1. 从 [Releases](https://github.com/HMQYHM/HyperOSKeyboardFix/releases)
    下载正式签名 APK。
 2. 安装 APK，在 LSPosed 中启用模块并使用推荐作用域。
 3. 重启设备。
@@ -72,7 +72,7 @@ desktop applications on HyperOS 3.
 ### Installation
 
 1. Download the signed APK from
-   [Releases](https://github.com/HMQYHM/HyperOS-Keyboard-Fix/releases).
+   [Releases](https://github.com/HMQYHM/HyperOSKeyboardFix/releases).
 2. Install it, enable the module in LSPosed, and keep the recommended scope.
 3. Reboot the device.
 4. Open the module, enable the master switch, choose remote desktop apps, and

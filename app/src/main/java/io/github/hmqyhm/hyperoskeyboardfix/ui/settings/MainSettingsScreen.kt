@@ -37,6 +37,7 @@ import io.github.hmqyhm.hyperoskeyboardfix.config.ConfigContract
 import io.github.hmqyhm.hyperoskeyboardfix.config.ConfigKeys
 import io.github.hmqyhm.hyperoskeyboardfix.config.ModulePreferences
 import io.github.hmqyhm.hyperoskeyboardfix.config.ProviderDiagnostics
+import io.github.hmqyhm.hyperoskeyboardfix.config.ProjectLinks
 
 @Composable
 fun MainSettingsScreen(
@@ -207,7 +208,7 @@ fun MainSettingsScreen(
         item {
             OutlinedButton(
                 onClick = {
-                    uriHandler.openUri(PROJECT_HOMEPAGE)
+                    uriHandler.openUri(ProjectLinks.GITHUB_REPOSITORY)
                 },
                 modifier = Modifier.fillMaxWidth(),
             ) {
@@ -398,6 +399,3 @@ private data class ProviderUiResult(
     val success: Boolean,
     val version: Long?,
 )
-
-private const val PROJECT_HOMEPAGE =
-    "https://github.com/HMQYHM/HyperOS-Keyboard-Fix"

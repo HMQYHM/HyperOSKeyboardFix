@@ -7,6 +7,8 @@ object ConfigKeys {
     const val REMOTE_APP_WHITELIST = "remote_app_whitelist"
     const val ALL_SHORTCUTS_ENABLED = "all_shortcuts_enabled"
     const val UI_LANGUAGE = "ui_language"
+    const val APP_LAUNCH_COUNT = "app_launch_count"
+    const val STAR_PROMPT_SHOWN = "star_prompt_shown"
 
     const val SHORTCUT_META_TAB = "shortcut_meta_tab"
     const val SHORTCUT_META_D = "shortcut_meta_d"
