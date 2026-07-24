@@ -24,8 +24,17 @@ jobs:
           distribution: temurin
           java-version: "17"
 
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android 16 SDK
+        run: sdkmanager "platforms;android-36.1" "build-tools;36.1.0"
+
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
 
       - name: Build debug APK
         run: ./gradlew :app:assembleDebug --stacktrace

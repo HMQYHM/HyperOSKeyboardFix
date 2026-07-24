@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.0.1
+
+- Added an LSPosed recommended scope for Android Framework and System UI.
+- Moved individual shortcut switches to a dedicated settings page.
+- Moved the project homepage button to the top of Settings.
+- Added a setup hint while module features are disabled.
+- Fixed the Android CI Gradle wrapper permission.
+- Expanded Chinese and English documentation with remote desktop, virtual
+  machine, cloud desktop, and streaming use cases.
+
 ## 1.0.0
 
 - Initial public release.

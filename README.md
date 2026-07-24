@@ -1,6 +1,11 @@
 # HyperOS Keyboard Fix
 
+[![Android CI](https://github.com/HMQYHM/HyperOSKeyboardFix/actions/workflows/build.yml/badge.svg)](https://github.com/HMQYHM/HyperOSKeyboardFix/actions/workflows/build.yml)
+
 [简体中文](#简体中文) · [English](#english)
+
+一款用于在 HyperOS 3 上将实体键盘快捷键传递给远程桌面应用的 LSPosed
+模块。
 
 An LSPosed module for passing physical keyboard shortcuts through to remote
 desktop applications on HyperOS 3.
@@ -14,6 +19,14 @@ desktop applications on HyperOS 3.
 - 阻止 HyperOS 同时执行桌面、最近任务等系统动作。
 - 不修改 Meta 键，不注入按键事件。
 - Material 3 设置界面，支持简体中文、繁體中文和 English。
+
+### 使用场景
+
+- 在 Microsoft Remote Desktop、RustDesk 等远程桌面应用中，将
+  Meta、Alt + Tab 等组合键完整传递到远端电脑。
+- 在虚拟机、云电脑和远程工作站应用中使用实体键盘操作 Windows 或
+  Linux 客户机。
+- 在 Moonlight、Steam Link 等串流应用中，避免 HyperOS 抢占键盘快捷键。
 
 ### 兼容性
 
@@ -62,6 +75,15 @@ desktop applications on HyperOS 3.
 - Does not remap Meta or inject synthetic key events.
 - Material 3 settings UI in Simplified Chinese, Traditional Chinese, and
   English.
+
+### Use cases
+
+- Pass Meta, Alt + Tab, and other combinations through Microsoft Remote
+  Desktop, RustDesk, and similar remote desktop clients.
+- Use a physical keyboard with Windows or Linux guests in virtual machine,
+  cloud desktop, and remote workstation apps.
+- Prevent HyperOS from taking over keyboard shortcuts in Moonlight, Steam Link,
+  and other streaming clients.
 
 ### Compatibility
 

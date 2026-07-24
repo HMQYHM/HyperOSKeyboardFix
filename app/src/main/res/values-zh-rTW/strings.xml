@@ -1,5 +1,6 @@
 <resources>
     <string name="app_name">HyperOS 鍵盤助手</string>
+    <string name="module_description">將 HyperOS 3 實體鍵盤快捷鍵傳遞給遠端桌面和虛擬機應用程式</string>
     <string name="home_title">HyperOS 鍵盤助手</string>
     <string name="home_subtitle">讓遠端桌面完整接收實體鍵盤快速鍵</string>
     <string name="home_feature_title">遠端桌面快速鍵接管</string>
@@ -7,6 +8,7 @@
     <string name="open_settings">開啟設定</string>
     <string name="status_enabled">模組功能已開啟</string>
     <string name="status_disabled">模組功能未開啟</string>
+    <string name="module_disabled_hint">模組功能尚未開啟，請點擊下方「開啟設定」完成設定。</string>
     <string name="settings_title">設定</string>
     <string name="back">返回</string>
     <string name="master_title">遠端桌面快速鍵接管</string>

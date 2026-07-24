@@ -1,5 +1,6 @@
 <resources>
     <string name="app_name">HyperOS Keyboard Fix</string>
+    <string name="module_description">Pass HyperOS 3 physical keyboard shortcuts to remote desktop and virtual machine apps</string>
     <string name="home_title">HyperOS Keyboard Fix</string>
     <string name="home_subtitle">Pass physical keyboard shortcuts through to remote desktops</string>
     <string name="home_feature_title">Remote desktop shortcut takeover</string>
@@ -7,6 +8,7 @@
     <string name="open_settings">Open settings</string>
     <string name="status_enabled">Module features enabled</string>
     <string name="status_disabled">Module features disabled</string>
+    <string name="module_disabled_hint">Module features are disabled. Tap Open settings below to configure them.</string>
     <string name="settings_title">Settings</string>
     <string name="back">Back</string>
     <string name="master_title">Remote desktop shortcut takeover</string>

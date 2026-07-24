@@ -33,6 +33,7 @@ import io.github.hmqyhm.hyperoskeyboardfix.config.ModulePreferences
 import io.github.hmqyhm.hyperoskeyboardfix.config.ProjectLinks
 import io.github.hmqyhm.hyperoskeyboardfix.ui.home.HomeScreen
 import io.github.hmqyhm.hyperoskeyboardfix.ui.settings.MainSettingsScreen
+import io.github.hmqyhm.hyperoskeyboardfix.ui.settings.ShortcutSettingsScreen
 import io.github.hmqyhm.hyperoskeyboardfix.ui.settings.WhitelistScreen
 import io.github.hmqyhm.hyperoskeyboardfix.ui.theme.HyperoskeyboardfixTheme
 import java.util.concurrent.CancellationException
@@ -63,6 +64,7 @@ class MainActivity : ComponentActivity() {
                         }
                         page = when (page) {
                             AppPage.WHITELIST -> AppPage.SETTINGS
+                            AppPage.SHORTCUTS -> AppPage.SETTINGS
                             AppPage.SETTINGS -> AppPage.HOME
                             AppPage.HOME -> AppPage.HOME
                         }
@@ -100,7 +102,14 @@ class MainActivity : ComponentActivity() {
                                 contentPadding = contentPadding,
                                 onBack = { page = AppPage.HOME },
                                 onOpenWhitelist = { page = AppPage.WHITELIST },
+                                onOpenShortcuts = { page = AppPage.SHORTCUTS },
                                 onLanguageSelected = ::applyAppLanguage,
+                            )
+
+                            AppPage.SHORTCUTS -> ShortcutSettingsScreen(
+                                preferences = preferences,
+                                contentPadding = contentPadding,
+                                onBack = { page = AppPage.SETTINGS },
                             )
 
                             AppPage.WHITELIST -> WhitelistScreen(
@@ -185,6 +194,7 @@ private fun StarPromptDialog(
 private enum class AppPage {
     HOME,
     SETTINGS,
+    SHORTCUTS,
     WHITELIST,
 }
 

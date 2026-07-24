@@ -98,6 +98,13 @@ fun HomeScreen(
                         text = stringResource(R.string.home_feature_description),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                    if (!preferences.isMasterEnabled()) {
+                        Text(
+                            text = stringResource(R.string.module_disabled_hint),
+                            color = MaterialTheme.colorScheme.primary,
+                            style = MaterialTheme.typography.bodyLarge,
+                        )
+                    }
                     Text(
                         text = stringResource(
                             R.string.selected_apps_count,
