@@ -1,6 +1,15 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+}
+
+val signingPropertiesFile = rootProject.file("keystore.properties")
+val signingProperties = Properties()
+val releaseSigningAvailable = signingPropertiesFile.isFile
+if (releaseSigningAvailable) {
+    signingPropertiesFile.inputStream().use(signingProperties::load)
 }
 
 android {
@@ -28,9 +37,25 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        if (releaseSigningAvailable) {
+            create("release") {
+                storeFile = rootProject.file(
+                    signingProperties.getProperty("storeFile"),
+                )
+                storePassword = signingProperties.getProperty("storePassword")
+                keyAlias = signingProperties.getProperty("keyAlias")
+                keyPassword = signingProperties.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
+            if (releaseSigningAvailable) {
+                signingConfig = signingConfigs.getByName("release")
+            }
             optimization {
                 enable = false
             }

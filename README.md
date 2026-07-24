@@ -18,6 +18,8 @@ desktop applications on HyperOS 3.
 ### 兼容性
 
 - 已测试：Android 16（API 36）、HyperOS 3、LSPosed。
+- 基于小米悬浮键盘开发，并已确认小米悬浮键盘可用。
+- 其他键盘暂未测试，预计兼容小米键盘式保护壳。
 - 最低 Android 版本：Android 15（API 35）。
 - 当前 Hook 针对 HyperOS 3 的
   `com.android.server.policy.BaseMiuiPhoneWindowManager` 实现。其他 ROM
@@ -64,6 +66,9 @@ desktop applications on HyperOS 3.
 ### Compatibility
 
 - Tested on Android 16 (API 36), HyperOS 3, and LSPosed.
+- Built for and verified with the Xiaomi Floating Keyboard.
+- Other keyboards are currently untested. The Xiaomi Keyboard Case is expected
+  to be compatible.
 - Minimum supported Android version: Android 15 (API 35).
 - The current hooks target HyperOS 3's
   `com.android.server.policy.BaseMiuiPhoneWindowManager`. Other ROMs or major

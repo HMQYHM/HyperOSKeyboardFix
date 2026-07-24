@@ -11,3 +11,5 @@
 - Added the final adaptive launcher icon.
 - Added a one-time GitHub Star prompt on the third app launch.
 - Added a GitHub project link at the bottom of Settings.
+- Documented Xiaomi Floating Keyboard support and expected Keyboard Case
+  compatibility.
