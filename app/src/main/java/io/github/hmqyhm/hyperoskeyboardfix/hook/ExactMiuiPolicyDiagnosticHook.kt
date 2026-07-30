@@ -4,7 +4,6 @@ import android.content.ComponentName
 import android.os.IBinder
 import android.view.InputDevice
 import android.view.KeyEvent
-import io.github.hmqyhm.hyperoskeyboardfix.config.ConfigKeys
 import io.github.hmqyhm.hyperoskeyboardfix.utils.HookLog
 import de.robv.android.xposed.XC_MethodHook
 import de.robv.android.xposed.XposedBridge
@@ -127,15 +126,14 @@ object ExactMiuiPolicyDiagnosticHook {
                 val event = param.args.filterIsInstance<KeyEvent>().firstOrNull() ?: return
                 if (!isPhysicalKeyboardEvent(event)) return
 
+                val snapshot = ConfigProviderClient.snapshot()
                 val logExactPath = isRequestedDiagnosticEvent(event)
                 val logDisableResult = method.name == "disableAOSPShortcut" &&
                     event.keyCode in DISABLE_RESULT_KEYS
-                val configurableEvent = shortcutKey(event) != null ||
-                    isMetaKey(event.keyCode) ||
-                    isAltKey(event.keyCode)
+                val configurableEvent = isShortcutCandidate(event)
                 if (!logExactPath && !logDisableResult && !configurableEvent) return
 
-                val context = buildContext(event)
+                val context = buildContext(event, snapshot)
                 param.setObjectExtra(EXTRA_CONTEXT, context)
                 param.setObjectExtra(EXTRA_LOG_EXACT_PATH, logExactPath)
                 if (logExactPath) {
@@ -143,21 +141,14 @@ object ExactMiuiPolicyDiagnosticHook {
                 }
                 when (method.name) {
                     "interceptKeyBeforeDispatching" -> {
-                        if (
-                            context.takeoverEnabled &&
-                            context.metaModeEnabled &&
-                            (
-                                isMetaKey(event.keyCode) ||
-                                    event.metaState and KeyEvent.META_META_ON != 0
-                                )
-                        ) {
+                        if (context.takeoverEnabled) {
                             param.result = 0L
                         }
                     }
 
                     "handleAltTab" -> {
                         if (
-                            context.altTabModeEnabled &&
+                            context.takeoverEnabled &&
                             (isAltTab(event) || isAltKey(event.keyCode))
                         ) {
                             param.result = null
@@ -167,7 +158,6 @@ object ExactMiuiPolicyDiagnosticHook {
                     "handleMetaKey" -> {
                         if (
                             context.takeoverEnabled &&
-                            context.metaModeEnabled &&
                             (
                                 isMetaKey(event.keyCode) ||
                                     event.metaState and KeyEvent.META_META_ON != 0
@@ -184,10 +174,7 @@ object ExactMiuiPolicyDiagnosticHook {
                     }
 
                     "interceptKey" -> {
-                        if (
-                            context.takeoverEnabled &&
-                            shortcutKey(event) in ConfigKeys.META_SHORTCUTS
-                        ) {
+                        if (context.takeoverEnabled) {
                             param.result = false
                             HookLog.i(
                                 "SYSTEM_SHORTCUT_BLOCKED " +
@@ -233,15 +220,11 @@ object ExactMiuiPolicyDiagnosticHook {
         }
     }
 
-    private fun buildContext(event: KeyEvent): ExactContext {
-        val config = ConfigProviderClient.snapshot()
+    private fun buildContext(
+        event: KeyEvent,
+        config: ConfigProviderClient.ConfigSnapshot,
+    ): ExactContext {
         val foregroundPackage = lookupForegroundPackage()
-        val shortcutKey = shortcutKey(event)
-        val metaShortcutEnabled = ConfigKeys.META_SHORTCUTS.any { key ->
-            config.shortcutStates[key] == true
-        }
-        val altTabShortcutEnabled =
-            config.shortcutStates[ConfigKeys.SHORTCUT_ALT_TAB] == true
         val whitelist = config.whitelist.sorted()
         whitelist.forEachIndexed { index, candidate ->
             HookLog.i(
@@ -252,28 +235,30 @@ object ExactMiuiPolicyDiagnosticHook {
         val whitelisted = foregroundPackage != null &&
             foregroundPackage in config.whitelist
         val baseEnabled = config.masterEnabled && whitelisted
-        val metaModeEnabled = baseEnabled && metaShortcutEnabled
-        val altTabModeEnabled = baseEnabled && altTabShortcutEnabled
-        val shortcutEnabled = shortcutKey != null &&
-            config.shortcutStates[shortcutKey] == true
+        val metaModeEnabled = baseEnabled &&
+            config.allShortcutsEnabled
+        val altTabModeEnabled = baseEnabled &&
+            config.allShortcutsEnabled
+        val ctrlModeEnabled = baseEnabled &&
+            config.allShortcutsEnabled
+        val shortcutEnabled = config.allShortcutsEnabled
         val takeoverEnabled = when {
             isMetaKey(event.keyCode) -> metaModeEnabled
             isAltKey(event.keyCode) -> altTabModeEnabled
-            shortcutKey != null -> baseEnabled && shortcutEnabled
+            isCtrlKey(event.keyCode) -> ctrlModeEnabled
+            isModifiedShortcut(event) || isFunctionKey(event.keyCode) ->
+                baseEnabled && shortcutEnabled
             else -> false
         }
         HookLog.i(
             "WHITELIST_COMPARE package=${foregroundPackage ?: "null"} " +
                 "contains=$whitelisted",
         )
-        if (shortcutKey != null) {
-            val defaultValueUsed = shortcutKey !in config.presentShortcutKeys
-            HookLog.i(
-                "SHORTCUT_COMPARE lookupKey=$shortcutKey " +
-                    "storedValue=${config.shortcutStates[shortcutKey] == true} " +
-                    "defaultValueUsed=$defaultValueUsed",
-            )
-        }
+        HookLog.i(
+            "SHORTCUT_COMPARE lookupKey=all " +
+                "storedValue=$shortcutEnabled " +
+                "allShortcutsEnabled=${config.allShortcutsEnabled}",
+        )
         return ExactContext(
             event = event,
             masterEnabled = config.masterEnabled,
@@ -346,49 +331,27 @@ object ExactMiuiPolicyDiagnosticHook {
         keyCode == KeyEvent.KEYCODE_ALT_LEFT ||
             keyCode == KeyEvent.KEYCODE_ALT_RIGHT
 
-    private fun shortcutKey(event: KeyEvent): String? {
-        val metaPressed = event.metaState and KeyEvent.META_META_ON != 0
-        val altPressed = event.metaState and KeyEvent.META_ALT_ON != 0
-        return when {
-            event.keyCode == KeyEvent.KEYCODE_TAB && altPressed ->
-                ConfigKeys.SHORTCUT_ALT_TAB
-            event.keyCode == KeyEvent.KEYCODE_TAB && metaPressed ->
-                ConfigKeys.SHORTCUT_META_TAB
-            event.keyCode == KeyEvent.KEYCODE_D && metaPressed ->
-                ConfigKeys.SHORTCUT_META_D
-            event.keyCode == KeyEvent.KEYCODE_E && metaPressed ->
-                ConfigKeys.SHORTCUT_META_E
-            event.keyCode == KeyEvent.KEYCODE_R && metaPressed ->
-                ConfigKeys.SHORTCUT_META_R
-            event.keyCode == KeyEvent.KEYCODE_L && metaPressed ->
-                ConfigKeys.SHORTCUT_META_L
-            event.keyCode == KeyEvent.KEYCODE_W && metaPressed ->
-                ConfigKeys.SHORTCUT_META_W
-            event.keyCode == KeyEvent.KEYCODE_M && metaPressed ->
-                ConfigKeys.SHORTCUT_META_M
-            event.keyCode == KeyEvent.KEYCODE_N && metaPressed ->
-                ConfigKeys.SHORTCUT_META_N
-            event.keyCode == KeyEvent.KEYCODE_S && metaPressed ->
-                ConfigKeys.SHORTCUT_META_S
-            event.keyCode == KeyEvent.KEYCODE_A && metaPressed ->
-                ConfigKeys.SHORTCUT_META_A
-            event.keyCode == KeyEvent.KEYCODE_C && metaPressed ->
-                ConfigKeys.SHORTCUT_META_C
-            event.keyCode == KeyEvent.KEYCODE_V && metaPressed ->
-                ConfigKeys.SHORTCUT_META_V
-            event.keyCode == KeyEvent.KEYCODE_X && metaPressed ->
-                ConfigKeys.SHORTCUT_META_X
-            event.keyCode == KeyEvent.KEYCODE_DPAD_LEFT && metaPressed ->
-                ConfigKeys.SHORTCUT_META_LEFT
-            event.keyCode == KeyEvent.KEYCODE_DPAD_RIGHT && metaPressed ->
-                ConfigKeys.SHORTCUT_META_RIGHT
-            event.keyCode == KeyEvent.KEYCODE_DPAD_UP && metaPressed ->
-                ConfigKeys.SHORTCUT_META_UP
-            event.keyCode == KeyEvent.KEYCODE_DPAD_DOWN && metaPressed ->
-                ConfigKeys.SHORTCUT_META_DOWN
-            else -> null
-        }
-    }
+    private fun isCtrlKey(keyCode: Int): Boolean =
+        keyCode == KeyEvent.KEYCODE_CTRL_LEFT ||
+            keyCode == KeyEvent.KEYCODE_CTRL_RIGHT
+
+    private fun isShortcutCandidate(event: KeyEvent): Boolean =
+        isMetaKey(event.keyCode) ||
+            isAltKey(event.keyCode) ||
+            isCtrlKey(event.keyCode) ||
+            isModifiedShortcut(event) ||
+            isFunctionKey(event.keyCode)
+
+    private fun isModifiedShortcut(event: KeyEvent): Boolean =
+        event.metaState and (
+            KeyEvent.META_META_ON or
+                KeyEvent.META_ALT_ON or
+                KeyEvent.META_CTRL_ON or
+                KeyEvent.META_FUNCTION_ON
+            ) != 0
+
+    private fun isFunctionKey(keyCode: Int): Boolean =
+        keyCode in KeyEvent.KEYCODE_F1..KeyEvent.KEYCODE_F12
 
     private fun isPhysicalKeyboardEvent(event: KeyEvent): Boolean =
         event.deviceId >= 0 &&

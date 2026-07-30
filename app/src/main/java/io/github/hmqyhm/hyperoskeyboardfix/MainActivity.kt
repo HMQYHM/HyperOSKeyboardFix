@@ -11,9 +11,17 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -33,7 +41,6 @@ import io.github.hmqyhm.hyperoskeyboardfix.config.ModulePreferences
 import io.github.hmqyhm.hyperoskeyboardfix.config.ProjectLinks
 import io.github.hmqyhm.hyperoskeyboardfix.ui.home.HomeScreen
 import io.github.hmqyhm.hyperoskeyboardfix.ui.settings.MainSettingsScreen
-import io.github.hmqyhm.hyperoskeyboardfix.ui.settings.ShortcutSettingsScreen
 import io.github.hmqyhm.hyperoskeyboardfix.ui.settings.WhitelistScreen
 import io.github.hmqyhm.hyperoskeyboardfix.ui.theme.HyperoskeyboardfixTheme
 import java.util.concurrent.CancellationException
@@ -63,8 +70,7 @@ class MainActivity : ComponentActivity() {
                             backProgress = event.progress
                         }
                         page = when (page) {
-                            AppPage.WHITELIST -> AppPage.SETTINGS
-                            AppPage.SHORTCUTS -> AppPage.SETTINGS
+                            AppPage.WHITELIST -> AppPage.HOME
                             AppPage.SETTINGS -> AppPage.HOME
                             AppPage.HOME -> AppPage.HOME
                         }
@@ -75,7 +81,20 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                Scaffold(modifier = Modifier.fillMaxSize()) { contentPadding ->
+                val showBottomNavigation =
+                    page == AppPage.HOME || page == AppPage.SETTINGS
+
+                Scaffold(
+                    modifier = Modifier.fillMaxSize(),
+                    bottomBar = {
+                        if (showBottomNavigation) {
+                            AppBottomNavigation(
+                                currentPage = page,
+                                onPageSelected = { page = it },
+                            )
+                        }
+                    },
+                ) { contentPadding ->
                     AnimatedContent(
                         targetState = page,
                         modifier = Modifier.graphicsLayer {
@@ -86,7 +105,13 @@ class MainActivity : ComponentActivity() {
                             alpha = 1f - progress * 0.12f
                         },
                         transitionSpec = {
-                            fadeIn(tween(260)) togetherWith fadeOut(tween(180))
+                            (
+                                fadeIn(tween(260)) +
+                                    slideInHorizontally(tween(320)) { width -> width / 12 }
+                                ) togetherWith (
+                                fadeOut(tween(180)) +
+                                    slideOutHorizontally(tween(240)) { width -> -width / 16 }
+                                )
                         },
                         label = "app_page_transition",
                     ) { targetPage ->
@@ -94,29 +119,20 @@ class MainActivity : ComponentActivity() {
                             AppPage.HOME -> HomeScreen(
                                 preferences = preferences,
                                 contentPadding = contentPadding,
-                                onOpenSettings = { page = AppPage.SETTINGS },
+                                onOpenWhitelist = { page = AppPage.WHITELIST },
                             )
 
                             AppPage.SETTINGS -> MainSettingsScreen(
                                 preferences = preferences,
                                 contentPadding = contentPadding,
-                                onBack = { page = AppPage.HOME },
-                                onOpenWhitelist = { page = AppPage.WHITELIST },
-                                onOpenShortcuts = { page = AppPage.SHORTCUTS },
                                 onLanguageSelected = ::applyAppLanguage,
-                            )
-
-                            AppPage.SHORTCUTS -> ShortcutSettingsScreen(
-                                preferences = preferences,
-                                contentPadding = contentPadding,
-                                onBack = { page = AppPage.SETTINGS },
                             )
 
                             AppPage.WHITELIST -> WhitelistScreen(
                                 preferences = preferences,
                                 contentPadding = contentPadding,
-                                onBack = { page = AppPage.SETTINGS },
-                                onSaved = { page = AppPage.SETTINGS },
+                                onBack = { page = AppPage.HOME },
+                                onSaved = { page = AppPage.HOME },
                             )
                         }
                     }
@@ -138,6 +154,37 @@ class MainActivity : ComponentActivity() {
         if (localeManager.applicationLocales.toLanguageTags() != languageTag) {
             localeManager.applicationLocales = requestedLocales
         }
+    }
+}
+
+@Composable
+private fun AppBottomNavigation(
+    currentPage: AppPage,
+    onPageSelected: (AppPage) -> Unit,
+) {
+    NavigationBar {
+        NavigationBarItem(
+            selected = currentPage == AppPage.HOME,
+            onClick = { onPageSelected(AppPage.HOME) },
+            icon = {
+                Icon(
+                    imageVector = Icons.Filled.Home,
+                    contentDescription = null,
+                )
+            },
+            label = { Text(stringResource(R.string.navigation_home)) },
+        )
+        NavigationBarItem(
+            selected = currentPage == AppPage.SETTINGS,
+            onClick = { onPageSelected(AppPage.SETTINGS) },
+            icon = {
+                Icon(
+                    imageVector = Icons.Filled.Settings,
+                    contentDescription = null,
+                )
+            },
+            label = { Text(stringResource(R.string.navigation_settings)) },
+        )
     }
 }
 
@@ -194,7 +241,6 @@ private fun StarPromptDialog(
 private enum class AppPage {
     HOME,
     SETTINGS,
-    SHORTCUTS,
     WHITELIST,
 }
 

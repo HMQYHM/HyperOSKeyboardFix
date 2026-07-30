@@ -29,9 +29,7 @@ object ProviderDiagnostics {
             config.containsKey(ConfigContract.BUNDLE_CONFIG_VERSION) &&
             config.containsKey(ConfigContract.BUNDLE_MASTER_ENABLED) &&
             config.containsKey(ConfigContract.BUNDLE_WHITELIST) &&
-            ModulePreferences.SHORTCUTS.all {
-                config.containsKey(it.preferenceKey)
-            }
+            config.containsKey(ConfigKeys.ALL_SHORTCUTS_ENABLED)
         val version = if (complete) {
             config?.getLong(ConfigContract.BUNDLE_CONFIG_VERSION)
         } else {

@@ -9,6 +9,7 @@ import android.os.Bundle
 import android.os.Process
 import android.util.Log
 import io.github.hmqyhm.hyperoskeyboardfix.config.ConfigContract
+import io.github.hmqyhm.hyperoskeyboardfix.config.ConfigKeys
 import io.github.hmqyhm.hyperoskeyboardfix.config.ModulePreferences
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -52,12 +53,10 @@ class ConfigProvider : ContentProvider() {
                 ConfigContract.BUNDLE_WHITELIST,
                 ArrayList(preferences.whitelist()),
             )
-            ModulePreferences.SHORTCUTS.forEach { option ->
-                putBoolean(
-                    option.preferenceKey,
-                    preferences.isShortcutEnabled(option.preferenceKey),
-                )
-            }
+            putBoolean(
+                ConfigKeys.ALL_SHORTCUTS_ENABLED,
+                preferences.areAllShortcutsEnabled(),
+            )
         }
         logProviderResponse(bundle)
         return bundle
@@ -69,9 +68,6 @@ class ConfigProvider : ContentProvider() {
                 .getStringArrayList(ConfigContract.BUNDLE_WHITELIST)
                 .orEmpty()
                 .sorted()
-            val shortcutCount = ModulePreferences.SHORTCUTS.count { option ->
-                bundle.getBoolean(option.preferenceKey, false)
-            }
             Log.i(
                 TAG,
                 "CONFIG_PROVIDER_RESPONSE " +
@@ -81,18 +77,14 @@ class ConfigProvider : ContentProvider() {
                         false,
                     )} " +
                     "whitelistSize=${whitelist.size} " +
-                    "shortcutCount=$shortcutCount " +
+                    "allShortcutsEnabled=${bundle.getBoolean(
+                        ConfigKeys.ALL_SHORTCUTS_ENABLED,
+                        false,
+                    )} " +
                     "bundleKeys=${bundle.keySet().sorted()}",
             )
             whitelist.forEachIndexed { index, packageName ->
                 Log.i(TAG, "WHITELIST_CONTENT [$index]=$packageName")
-            }
-            ModulePreferences.SHORTCUTS.forEach { option ->
-                Log.i(
-                    TAG,
-                    "${option.preferenceKey}=" +
-                        bundle.getBoolean(option.preferenceKey, false),
-                )
             }
         } catch (error: Throwable) {
             Log.w(

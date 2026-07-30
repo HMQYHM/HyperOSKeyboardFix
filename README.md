@@ -15,10 +15,21 @@ desktop applications on HyperOS 3.
 ### 功能
 
 - 仅在用户选择的白名单应用中接管快捷键。
-- 支持 Meta + Tab、Meta + D/E/R/L/W/M/N/S/A/C/V/X、Meta + 方向键和 Alt + Tab。
+- 接管实体键盘的 Meta、Alt、Ctrl、Fn 修饰组合键与 F1–F12 功能键。
 - 阻止 HyperOS 同时执行桌面、最近任务等系统动作。
 - 不修改 Meta 键，不注入按键事件。
-- Material 3 设置界面，支持简体中文、繁體中文和 English。
+- 现代化 Material 3 首页与设置界面，支持预测性返回手势。
+- 支持简体中文、繁體中文和 English。
+
+### 1.1.0 更新内容
+
+- 将模块总开关与“接管全部组合键”合并为“接管当前白名单软件快捷键”。
+- 白名单为空时提供 5 秒倒计时引导，自动进入应用选择页面。
+- 已选应用优先显示，保存或返回后回到模块首页。
+- 扩充远程桌面、远控、串流与云游戏应用的默认白名单目录；仅自动选择设备上已安装的匹配应用。
+- 扩展为接管白名单应用中的全部受支持实体键盘组合键。
+- 移除实验性的物理键盘直通和软键盘隐藏功能。
+- 更新首页布局、动画、状态展示与三种语言文案。
 
 ### 使用场景
 
@@ -44,7 +55,7 @@ desktop applications on HyperOS 3.
    下载正式签名 APK。
 2. 安装 APK，在 LSPosed 中启用模块并使用推荐作用域。
 3. 重启设备。
-4. 打开模块，启用总开关，选择远程桌面应用并配置快捷键。
+4. 打开模块，选择需要生效的应用，然后启用快捷键接管。
 
 ### 隐私
 
@@ -68,13 +79,29 @@ desktop applications on HyperOS 3.
 ### Features
 
 - Takes over shortcuts only while an allowlisted app is in the foreground.
-- Supports Meta + Tab, Meta + D/E/R/L/W/M/N/S/A/C/V/X, Meta + Arrow keys,
-  and Alt + Tab.
+- Handles physical-keyboard combinations using Meta, Alt, Ctrl, and Fn,
+  together with the F1–F12 function keys.
 - Prevents HyperOS from executing Home, Recents, and other system actions at
   the same time.
 - Does not remap Meta or inject synthetic key events.
-- Material 3 settings UI in Simplified Chinese, Traditional Chinese, and
-  English.
+- Modern Material 3 Home and Settings screens with predictive back support.
+- Available in Simplified Chinese, Traditional Chinese, and English.
+
+### What's new in 1.1.0
+
+- Merged the master switch and all-combinations switch into one allowlist-aware
+  shortcut takeover control.
+- Added a five-second redirect prompt when no allowlisted app is selected.
+- Keeps selected apps at the top and returns to the module Home screen after
+  saving.
+- Expanded the built-in catalog for remote desktop, remote control, streaming,
+  and cloud gaming apps; only matching apps actually installed on the device
+  are selected.
+- Expanded takeover to all supported physical-keyboard combinations inside
+  allowlisted apps.
+- Removed the experimental physical-keyboard passthrough and soft-keyboard
+  suppression feature.
+- Refreshed the Home layout, animation, status presentation, and translations.
 
 ### Use cases
 
@@ -102,8 +129,8 @@ desktop applications on HyperOS 3.
    [Releases](https://github.com/HMQYHM/HyperOSKeyboardFix/releases).
 2. Install it, enable the module in LSPosed, and keep the recommended scope.
 3. Reboot the device.
-4. Open the module, enable the master switch, choose remote desktop apps, and
-   configure shortcuts.
+4. Open the module, choose the apps where it should work, and enable shortcut
+   takeover.
 
 ## Build
 

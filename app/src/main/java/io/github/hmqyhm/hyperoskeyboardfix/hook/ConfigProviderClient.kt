@@ -9,7 +9,7 @@ import android.os.HandlerThread
 import android.os.RemoteException
 import android.os.SystemClock
 import io.github.hmqyhm.hyperoskeyboardfix.config.ConfigContract
-import io.github.hmqyhm.hyperoskeyboardfix.config.ModulePreferences
+import io.github.hmqyhm.hyperoskeyboardfix.config.ConfigKeys
 import io.github.hmqyhm.hyperoskeyboardfix.utils.HookLog
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
@@ -19,9 +19,7 @@ object ConfigProviderClient {
         val version: Long,
         val masterEnabled: Boolean,
         val whitelist: Set<String>,
-        val enabledShortcuts: Set<String>,
-        val shortcutStates: Map<String, Boolean>,
-        val presentShortcutKeys: Set<String>,
+        val allShortcutsEnabled: Boolean,
         val lastRefreshTime: Long,
     ) {
         companion object {
@@ -29,11 +27,7 @@ object ConfigProviderClient {
                 version = 0L,
                 masterEnabled = false,
                 whitelist = emptySet(),
-                enabledShortcuts = emptySet(),
-                shortcutStates = ModulePreferences.SHORTCUTS.associate {
-                    it.preferenceKey to false
-                },
-                presentShortcutKeys = emptySet(),
+                allShortcutsEnabled = false,
                 lastRefreshTime = 0L,
             )
         }
@@ -42,6 +36,7 @@ object ConfigProviderClient {
     private val initialized = AtomicBoolean(false)
     private val connected = AtomicBoolean(false)
     private val observerRegistered = AtomicBoolean(false)
+    private val reconnectScheduled = AtomicBoolean(false)
     private val cache = AtomicReference(ConfigSnapshot.SAFE_DEFAULT)
     private lateinit var applicationContext: Context
     private lateinit var workerThread: HandlerThread
@@ -72,7 +67,22 @@ object ConfigProviderClient {
             refreshConfig("initial_load")
         } catch (error: Throwable) {
             logReadFailure("provider_ping", error)
+            scheduleReconnect()
         }
+    }
+
+    private fun scheduleReconnect() {
+        if (!reconnectScheduled.compareAndSet(false, true)) return
+        worker.postDelayed(
+            {
+                reconnectScheduled.set(false)
+                if (!connected.get()) {
+                    connectAndLoad()
+                    registerObserver()
+                }
+            },
+            INITIAL_RECONNECT_DELAY_MS,
+        )
     }
 
     private fun refreshConfig(stage: String) {
@@ -99,7 +109,7 @@ object ConfigProviderClient {
                     "version=${next.version} " +
                     "masterEnabled=${next.masterEnabled} " +
                     "whitelistSize=${next.whitelist.size} " +
-                    "enabledShortcutCount=${next.enabledShortcuts.size}",
+                    "allShortcutsEnabled=${next.allShortcutsEnabled}",
             )
             logSnapshot(next, stage)
         } catch (error: Throwable) {
@@ -119,25 +129,14 @@ object ConfigProviderClient {
         }
         val whitelist = bundle.getStringArrayList(ConfigContract.BUNDLE_WHITELIST)
             ?: throw IllegalStateException("Whitelist has invalid type")
-        val presentShortcutKeys = ModulePreferences.SHORTCUTS
-            .mapNotNullTo(linkedSetOf()) { option ->
-                option.preferenceKey.takeIf(bundle::containsKey)
-            }
-        val shortcutStates = ModulePreferences.SHORTCUTS.associateTo(linkedMapOf()) {
-            option ->
-            option.preferenceKey to bundle.getBoolean(option.preferenceKey, false)
-        }
-        val enabledShortcuts = shortcutStates
-            .filterValues { it }
-            .keys
-            .toCollection(linkedSetOf())
         return ConfigSnapshot(
             version = bundle.getLong(ConfigContract.BUNDLE_CONFIG_VERSION),
             masterEnabled = bundle.getBoolean(ConfigContract.BUNDLE_MASTER_ENABLED),
             whitelist = whitelist.toSet(),
-            enabledShortcuts = enabledShortcuts,
-            shortcutStates = shortcutStates,
-            presentShortcutKeys = presentShortcutKeys,
+            allShortcutsEnabled = bundle.getBoolean(
+                ConfigKeys.ALL_SHORTCUTS_ENABLED,
+                false,
+            ),
             lastRefreshTime = SystemClock.elapsedRealtime(),
         )
     }
@@ -214,17 +213,13 @@ object ConfigProviderClient {
         val whitelist = snapshot.whitelist
             .sorted()
             .joinToString(prefix = "[", postfix = "]")
-        val shortcuts = ModulePreferences.SHORTCUTS.joinToString(" ") { option ->
-            "${option.preferenceKey}=${snapshot.shortcutStates[option.preferenceKey] == true}"
-        }
         HookLog.i(
             "CONFIG_SNAPSHOT stage=$stage " +
                 "version=${snapshot.version} " +
                 "masterEnabled=${snapshot.masterEnabled} " +
                 "whitelistSize=${snapshot.whitelist.size} " +
-                "enabledShortcutCount=${snapshot.enabledShortcuts.size} " +
-                "whitelist=$whitelist " +
-                shortcuts,
+                "allShortcutsEnabled=${snapshot.allShortcutsEnabled} " +
+                "whitelist=$whitelist",
         )
     }
 
@@ -233,9 +228,6 @@ object ConfigProviderClient {
             .getStringArrayList(ConfigContract.BUNDLE_WHITELIST)
             .orEmpty()
             .sorted()
-        val shortcutCount = ModulePreferences.SHORTCUTS.count { option ->
-            bundle.getBoolean(option.preferenceKey, false)
-        }
         HookLog.i(
             "CONFIG_PROVIDER_RESPONSE " +
                 "version=${bundle.getLong(ConfigContract.BUNDLE_CONFIG_VERSION, -1L)} " +
@@ -244,17 +236,14 @@ object ConfigProviderClient {
                     false,
                 )} " +
                 "whitelistSize=${whitelist.size} " +
-                "shortcutCount=$shortcutCount " +
+                "allShortcutsEnabled=${bundle.getBoolean(
+                    ConfigKeys.ALL_SHORTCUTS_ENABLED,
+                    false,
+                )} " +
                 "bundleKeys=${bundle.keySet().sorted()}",
         )
         whitelist.forEachIndexed { index, packageName ->
             HookLog.i("WHITELIST_CONTENT [$index]=$packageName")
-        }
-        ModulePreferences.SHORTCUTS.forEach { option ->
-            HookLog.i(
-                "${option.preferenceKey}=" +
-                    bundle.getBoolean(option.preferenceKey, false),
-            )
         }
     }
 
@@ -283,18 +272,14 @@ object ConfigProviderClient {
                 .toSet(),
             snapshotValue = snapshot.whitelist,
         )
-        ModulePreferences.SHORTCUTS.forEach { option ->
-            val providerValue: Any = if (bundle.containsKey(option.preferenceKey)) {
-                bundle.getBoolean(option.preferenceKey, false)
-            } else {
-                "<missing>"
-            }
-            compareField(
-                field = option.preferenceKey,
-                providerValue = providerValue,
-                snapshotValue = snapshot.shortcutStates[option.preferenceKey] ?: false,
-            )
-        }
+        compareField(
+            field = ConfigKeys.ALL_SHORTCUTS_ENABLED,
+            providerValue = bundle.getBoolean(
+                ConfigKeys.ALL_SHORTCUTS_ENABLED,
+                false,
+            ),
+            snapshotValue = snapshot.allShortcutsEnabled,
+        )
     }
 
     private fun compareField(
@@ -330,4 +315,5 @@ object ConfigProviderClient {
     }
 
     private const val VERSION_CHECK_INTERVAL_MS = 60_000L
+    private const val INITIAL_RECONNECT_DELAY_MS = 5_000L
 }

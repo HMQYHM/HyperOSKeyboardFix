@@ -156,6 +156,9 @@ fun WhitelistScreen(
             Button(
                 onClick = {
                     preferences.saveWhitelist(selectedPackages)
+                    if (selectedPackages.isEmpty()) {
+                        preferences.setShortcutTakeoverEnabled(false)
+                    }
                     onSaved()
                 },
                 modifier = Modifier.weight(1f),

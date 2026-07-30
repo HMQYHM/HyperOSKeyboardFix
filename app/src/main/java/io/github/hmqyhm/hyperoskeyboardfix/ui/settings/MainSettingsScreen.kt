@@ -1,7 +1,5 @@
 package io.github.hmqyhm.hyperoskeyboardfix.ui.settings
 
-import androidx.compose.animation.animateContentSize
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -16,9 +14,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -41,15 +37,12 @@ import io.github.hmqyhm.hyperoskeyboardfix.config.ProjectLinks
 fun MainSettingsScreen(
     preferences: ModulePreferences,
     contentPadding: PaddingValues,
-    onBack: () -> Unit,
-    onOpenWhitelist: () -> Unit,
-    onOpenShortcuts: () -> Unit,
     onLanguageSelected: (String) -> Unit,
 ) {
     val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
-    var masterEnabled by remember { mutableStateOf(preferences.isMasterEnabled()) }
-    var whitelistCount by remember { mutableStateOf(preferences.whitelist().size) }
+    val masterEnabled = preferences.isMasterEnabled()
+    val whitelistCount = preferences.whitelist().size
     val enabledShortcutCount = preferences.enabledShortcutCount()
     var configVersion by remember { mutableStateOf(preferences.configVersion()) }
     var selectedLanguage by remember { mutableStateOf(preferences.languageTag()) }
@@ -63,16 +56,20 @@ fun MainSettingsScreen(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 4.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                TextButton(onClick = onBack) {
-                    Text(stringResource(R.string.back))
-                }
                 Text(
                     text = stringResource(R.string.settings_title),
-                    style = MaterialTheme.typography.headlineMedium,
+                    style = MaterialTheme.typography.headlineLarge,
+                )
+                Text(
+                    text = stringResource(R.string.settings_subtitle),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
@@ -92,77 +89,6 @@ fun MainSettingsScreen(
                     Text(
                         text = stringResource(R.string.project_home_pending),
                         style = MaterialTheme.typography.bodySmall,
-                    )
-                }
-            }
-        }
-
-        item {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .animateContentSize(),
-            ) {
-                SettingSwitchRow(
-                    title = stringResource(R.string.master_title),
-                    description = stringResource(R.string.master_description),
-                    checked = masterEnabled,
-                    onCheckedChange = { enabled ->
-                        preferences.setMasterEnabled(enabled)
-                        masterEnabled = enabled
-                        configVersion = preferences.configVersion()
-                    },
-                )
-            }
-        }
-
-        item {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable {
-                        whitelistCount = preferences.whitelist().size
-                        onOpenWhitelist()
-                    },
-            ) {
-                Column(
-                    modifier = Modifier.padding(horizontal = 18.dp, vertical = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    Text(
-                        text = stringResource(R.string.choose_apps),
-                        style = MaterialTheme.typography.titleMedium,
-                    )
-                    Text(
-                        text = stringResource(R.string.selected_apps_count, whitelistCount),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-        }
-
-        item {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable(onClick = onOpenShortcuts),
-            ) {
-                Column(
-                    modifier = Modifier.padding(horizontal = 18.dp, vertical = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    Text(
-                        text = stringResource(R.string.shortcut_settings),
-                        style = MaterialTheme.typography.titleMedium,
-                    )
-                    Text(
-                        text = stringResource(
-                            R.string.enabled_shortcuts_count,
-                            enabledShortcutCount,
-                        ),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
@@ -277,7 +203,13 @@ private fun StatusCard(
             Text(
                 stringResource(
                     R.string.module_switch_status,
-                    stringResource(if (masterEnabled) R.string.state_on else R.string.state_off),
+                    stringResource(
+                        if (masterEnabled) {
+                            R.string.module_state_on
+                        } else {
+                            R.string.module_state_off
+                        },
+                    ),
                 ),
             )
             Text(stringResource(R.string.selected_apps_count, whitelistCount))
@@ -310,38 +242,6 @@ private fun StatusCard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-    }
-}
-
-@Composable
-private fun SettingSwitchRow(
-    title: String,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-    description: String? = null,
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onCheckedChange(!checked) }
-            .padding(horizontal = 14.dp, vertical = 11.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Column(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(3.dp),
-        ) {
-            Text(text = title, style = MaterialTheme.typography.bodyLarge)
-            if (description != null) {
-                Text(
-                    text = description,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-        Switch(checked = checked, onCheckedChange = onCheckedChange)
     }
 }
 
