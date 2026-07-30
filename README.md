@@ -21,16 +21,6 @@ desktop applications on HyperOS 3.
 - 现代化 Material 3 首页与设置界面，支持预测性返回手势。
 - 支持简体中文、繁體中文和 English。
 
-### 1.1.0 更新内容
-
-- 将模块总开关与“接管全部组合键”合并为“接管当前白名单软件快捷键”。
-- 白名单为空时提供 5 秒倒计时引导，自动进入应用选择页面。
-- 已选应用优先显示，保存或返回后回到模块首页。
-- 扩充远程桌面、远控、串流与云游戏应用的默认白名单目录；仅自动选择设备上已安装的匹配应用。
-- 扩展为接管白名单应用中的全部受支持实体键盘组合键。
-- 移除实验性的物理键盘直通和软键盘隐藏功能。
-- 更新首页布局、动画、状态展示与三种语言文案。
-
 ### 使用场景
 
 - 在 Microsoft Remote Desktop、RustDesk 等远程桌面应用中，将
@@ -86,22 +76,6 @@ desktop applications on HyperOS 3.
 - Does not remap Meta or inject synthetic key events.
 - Modern Material 3 Home and Settings screens with predictive back support.
 - Available in Simplified Chinese, Traditional Chinese, and English.
-
-### What's new in 1.1.0
-
-- Merged the master switch and all-combinations switch into one allowlist-aware
-  shortcut takeover control.
-- Added a five-second redirect prompt when no allowlisted app is selected.
-- Keeps selected apps at the top and returns to the module Home screen after
-  saving.
-- Expanded the built-in catalog for remote desktop, remote control, streaming,
-  and cloud gaming apps; only matching apps actually installed on the device
-  are selected.
-- Expanded takeover to all supported physical-keyboard combinations inside
-  allowlisted apps.
-- Removed the experimental physical-keyboard passthrough and soft-keyboard
-  suppression feature.
-- Refreshed the Home layout, animation, status presentation, and translations.
 
 ### Use cases
 
