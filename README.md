@@ -64,6 +64,26 @@ desktop applications on HyperOS 3.
 
 请勿上传完整 bugreport、账号信息或未经授权的系统 JAR。
 
+### 构建
+
+要求：
+
+- 安装 Android SDK 36 的 Android Studio
+- JDK 17 或更高版本
+
+```shell
+./gradlew :app:assembleDebug
+```
+
+Debug APK 输出位置：`app/build/outputs/apk/debug/app-debug.apk`。
+
+### 许可证
+
+Copyright © 2026 HMQYHM。
+
+本项目仅使用 GNU General Public License v3.0 许可证，详情请参阅
+[LICENSE](LICENSE)。
+
 ## English
 
 ### Features
@@ -106,7 +126,26 @@ desktop applications on HyperOS 3.
 4. Open the module, choose the apps where it should work, and enable shortcut
    takeover.
 
-## Build
+### Privacy
+
+The module does not request Internet access and does not collect or upload any
+personal data. Allowlist and shortcut settings remain on the device and are
+exposed to the hook process through a `ContentProvider` restricted to the
+system UID and the module itself.
+
+### Issue reports
+
+When opening an Issue, please include:
+
+- The device model and full HyperOS version;
+- Android and LSPosed versions;
+- The affected keyboard shortcut;
+- LSPosed module logs with personal information removed.
+
+Do not upload complete bugreports, account information, or system JAR files
+without authorization.
+
+### Build
 
 Requirements:
 
@@ -119,7 +158,7 @@ Requirements:
 
 The debug APK is generated at `app/build/outputs/apk/debug/app-debug.apk`.
 
-## License
+### License
 
 Copyright © 2026 HMQYHM.
 
