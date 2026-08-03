@@ -164,3 +164,7 @@ Copyright © 2026 HMQYHM.
 
 This project is licensed under the GNU General Public License v3.0 only. See
 [LICENSE](LICENSE).
+
+## 相关项目 / Related projects
+
+- [HMQYHM/FocusPenProX](https://github.com/HMQYHM/FocusPenProX)
