@@ -167,4 +167,4 @@ This project is licensed under the GNU General Public License v3.0 only. See
 
 ## 相关项目 / Related projects
 
-- [HMQYHM/FocusPenProX](https://github.com/HMQYHM/FocusPenProX)
+- [HMQYHM/FocusPenProX](https://github.com/HMQYHM/FocusPenProX)：小米焦点触控笔 Pro 手势增强模块。Gesture enhancement module for Xiaomi Focus Pen Pro.
