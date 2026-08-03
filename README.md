@@ -77,6 +77,10 @@ desktop applications on HyperOS 3.
 
 Debug APK 输出位置：`app/build/outputs/apk/debug/app-debug.apk`。
 
+### 相关项目 / Related projects
+
+- [HMQYHM/FocusPenProX](https://github.com/HMQYHM/FocusPenProX)：小米焦点触控笔 Pro 手势增强模块。Gesture enhancement module for Xiaomi Focus Pen Pro.
+
 ### 许可证
 
 Copyright © 2026 HMQYHM。
@@ -158,13 +162,13 @@ Requirements:
 
 The debug APK is generated at `app/build/outputs/apk/debug/app-debug.apk`.
 
+### 相关项目 / Related projects
+
+- [HMQYHM/FocusPenProX](https://github.com/HMQYHM/FocusPenProX)：小米焦点触控笔 Pro 手势增强模块。Gesture enhancement module for Xiaomi Focus Pen Pro.
+
 ### License
 
 Copyright © 2026 HMQYHM.
 
 This project is licensed under the GNU General Public License v3.0 only. See
 [LICENSE](LICENSE).
-
-## 相关项目 / Related projects
-
-- [HMQYHM/FocusPenProX](https://github.com/HMQYHM/FocusPenProX)：小米焦点触控笔 Pro 手势增强模块。Gesture enhancement module for Xiaomi Focus Pen Pro.
