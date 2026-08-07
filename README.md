@@ -77,6 +77,18 @@ desktop applications on HyperOS 3.
 
 Debug APK 输出位置：`app/build/outputs/apk/debug/app-debug.apk`。
 
+### 后续开发计划
+
+1. **输入法自动切换**：加入可选的小模块，在白名单应用进入前台时自动
+   切换到用户预设的输入法，首批计划适配搜狗输入法、百度输入法和讯飞
+   输入法；离开白名单应用后恢复原输入法。
+2. **键盘宏模式**：支持自定义文本、组合键、连续按键、延时、循环和连发
+   等宏操作。
+3. **Fn 功能键模式**：在白名单应用中将 `Fn + 1…0` 映射为
+   `F1…F10`。F11、F12 和其他映射交由键盘宏自定义。
+4. **界面升级**：参考 Pen Pro X 系列的 Material 3 视觉与交互风格，统一
+   首页、设置、导航和动画体验。
+
 ### 相关项目 / Related projects
 
 - [HMQYHM/FocusPenProX](https://github.com/HMQYHM/FocusPenProX)：小米焦点触控笔 Pro 手势增强模块。Gesture enhancement module for Xiaomi Focus Pen Pro.
@@ -161,6 +173,20 @@ Requirements:
 ```
 
 The debug APK is generated at `app/build/outputs/apk/debug/app-debug.apk`.
+
+### Roadmap
+
+1. **Automatic IME switching**: Add an optional companion module that switches
+   to a user-selected input method while an allowlisted app is in the
+   foreground. Initial compatibility targets are Sogou Input, Baidu Input, and
+   iFlytek Input, with the previous input method restored on exit.
+2. **Keyboard macro mode**: Support customizable text, key combinations,
+   sequential keys, delays, loops, and rapid-fire actions.
+3. **Fn function-key mode**: Map `Fn + 1…0` to `F1…F10` inside allowlisted
+   apps. F11, F12, and other mappings will remain customizable through keyboard
+   macros.
+4. **UI refresh**: Align the Home, Settings, navigation, and animations with
+   the Material 3 visual and interaction style used by the Pen Pro X series.
 
 ### 相关项目 / Related projects
 
