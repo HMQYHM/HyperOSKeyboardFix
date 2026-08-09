@@ -11,6 +11,7 @@ import android.os.SystemClock
 import io.github.hmqyhm.hyperoskeyboardfix.config.ConfigContract
 import io.github.hmqyhm.hyperoskeyboardfix.config.ConfigKeys
 import io.github.hmqyhm.hyperoskeyboardfix.utils.HookLog
+import io.github.hmqyhm.hyperoskeyboardfix.model.KeyboardMacro
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 
@@ -20,6 +21,16 @@ object ConfigProviderClient {
         val masterEnabled: Boolean,
         val whitelist: Set<String>,
         val allShortcutsEnabled: Boolean,
+        val inputMode: String,
+        val autoImeEnabled: Boolean,
+        val autoImeId: String,
+        val autoImeSwitchOnce: Boolean,
+        val keyboardMacros: List<KeyboardMacro>,
+        val keyboardMacrosEnabled: Boolean,
+        val notificationsEnabled: Boolean,
+        val notifyAppOpen: Boolean,
+        val notifyAutoIme: Boolean,
+        val notifyMacro: Boolean,
         val lastRefreshTime: Long,
     ) {
         companion object {
@@ -28,6 +39,16 @@ object ConfigProviderClient {
                 masterEnabled = false,
                 whitelist = emptySet(),
                 allShortcutsEnabled = false,
+                inputMode = ConfigKeys.INPUT_MODE_COMPATIBILITY,
+                autoImeEnabled = false,
+                autoImeId = "",
+                autoImeSwitchOnce = false,
+                keyboardMacros = emptyList(),
+                keyboardMacrosEnabled = false,
+                notificationsEnabled = false,
+                notifyAppOpen = false,
+                notifyAutoIme = false,
+                notifyMacro = false,
                 lastRefreshTime = 0L,
             )
         }
@@ -56,6 +77,22 @@ object ConfigProviderClient {
     }
 
     fun snapshot(): ConfigSnapshot = cache.get()
+
+    fun notifyEvent(event: String) {
+        if (!initialized.get()) return
+        worker.post {
+            try {
+                applicationContext.contentResolver.call(
+                    ConfigContract.baseUri,
+                    ConfigContract.METHOD_NOTIFY_EVENT,
+                    event,
+                    null,
+                )
+            } catch (error: Throwable) {
+                logReadFailure("notification_$event", error)
+            }
+        }
+    }
 
     private fun connectAndLoad() {
         try {
@@ -137,6 +174,22 @@ object ConfigProviderClient {
                 ConfigKeys.ALL_SHORTCUTS_ENABLED,
                 false,
             ),
+            inputMode = bundle.getString(ConfigKeys.INPUT_MODE)
+                ?: ConfigKeys.INPUT_MODE_COMPATIBILITY,
+            autoImeEnabled = bundle.getBoolean(ConfigKeys.AUTO_IME_ENABLED, false),
+            autoImeId = bundle.getString(ConfigKeys.AUTO_IME_ID).orEmpty(),
+            autoImeSwitchOnce = bundle.getBoolean(ConfigKeys.AUTO_IME_SWITCH_ONCE, false),
+            keyboardMacros = KeyboardMacro.decode(
+                bundle.getString(ConfigKeys.KEYBOARD_MACROS_JSON).orEmpty(),
+            ),
+            keyboardMacrosEnabled = bundle.getBoolean(
+                ConfigKeys.KEYBOARD_MACROS_ENABLED,
+                true,
+            ),
+            notificationsEnabled = bundle.getBoolean(ConfigKeys.NOTIFICATIONS_ENABLED, false),
+            notifyAppOpen = bundle.getBoolean(ConfigKeys.NOTIFY_APP_OPEN, false),
+            notifyAutoIme = bundle.getBoolean(ConfigKeys.NOTIFY_AUTO_IME, false),
+            notifyMacro = bundle.getBoolean(ConfigKeys.NOTIFY_MACRO, false),
             lastRefreshTime = SystemClock.elapsedRealtime(),
         )
     }

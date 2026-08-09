@@ -29,7 +29,12 @@ object ProviderDiagnostics {
             config.containsKey(ConfigContract.BUNDLE_CONFIG_VERSION) &&
             config.containsKey(ConfigContract.BUNDLE_MASTER_ENABLED) &&
             config.containsKey(ConfigContract.BUNDLE_WHITELIST) &&
-            config.containsKey(ConfigKeys.ALL_SHORTCUTS_ENABLED)
+            config.containsKey(ConfigKeys.ALL_SHORTCUTS_ENABLED) &&
+            config.containsKey(ConfigKeys.INPUT_MODE) &&
+            config.containsKey(ConfigKeys.AUTO_IME_ENABLED) &&
+            config.containsKey(ConfigKeys.AUTO_IME_ID) &&
+            config.containsKey(ConfigKeys.KEYBOARD_MACROS_JSON) &&
+            config.containsKey(ConfigKeys.KEYBOARD_MACROS_ENABLED)
         val version = if (complete) {
             config?.getLong(ConfigContract.BUNDLE_CONFIG_VERSION)
         } else {

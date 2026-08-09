@@ -11,6 +11,13 @@ object ConfigContract {
     const val METHOD_GET_CONFIG = "get_config"
     const val METHOD_GET_VERSION = "get_version"
     const val METHOD_PING = "ping"
+    const val METHOD_NOTIFY_EVENT = "notify_event"
+    const val METHOD_PUBLISH_CONFIG = "publish_config"
+
+    const val EVENT_APP_OPEN = "app_open"
+    const val EVENT_AUTO_IME = "auto_ime"
+    const val EVENT_MACRO = "macro"
+    const val EVENT_TEST = "test"
 
     const val BUNDLE_AVAILABLE = "available"
     const val BUNDLE_AUTHORITY = "authority"

@@ -2,8 +2,13 @@ package io.github.hmqyhm.hyperoskeyboardfix.ui.home
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -22,6 +27,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -50,9 +57,13 @@ fun HomeScreen(
     preferences: ModulePreferences,
     contentPadding: PaddingValues,
     onOpenWhitelist: () -> Unit,
+    onOpenAutoIme: () -> Unit,
 ) {
     var takeoverEnabled by remember {
         mutableStateOf(preferences.isMasterEnabled())
+    }
+    var keyboardMacrosEnabled by remember {
+        mutableStateOf(preferences.areKeyboardMacrosEnabled())
     }
     val whitelistCount = preferences.whitelist().size
     var showWhitelistDialog by remember { mutableStateOf(false) }
@@ -184,10 +195,57 @@ fun HomeScreen(
                             },
                         )
                     }
-                    Text(
-                        text = stringResource(R.string.master_description),
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    AnimatedVisibility(
+                        visible = takeoverEnabled,
+                        enter = fadeIn(tween(180)) + expandVertically(
+                            animationSpec = spring(
+                                dampingRatio = Spring.DampingRatioNoBouncy,
+                                stiffness = Spring.StiffnessMediumLow,
+                            ),
+                        ),
+                        exit = fadeOut(tween(150)) + shrinkVertically(
+                            animationSpec = spring(
+                                dampingRatio = Spring.DampingRatioNoBouncy,
+                                stiffness = Spring.StiffnessMediumLow,
+                            ),
+                        ),
+                    ) {
+                        Text(
+                            text = stringResource(R.string.master_description),
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        )
+                    }
+                    HorizontalDivider(
+                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.14f),
                     )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(3.dp),
+                        ) {
+                            Text(
+                                text = stringResource(R.string.keyboard_macro_switch),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                            Text(
+                                text = stringResource(R.string.keyboard_macro_switch_description),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            )
+                        }
+                        Switch(
+                            checked = keyboardMacrosEnabled,
+                            onCheckedChange = {
+                                keyboardMacrosEnabled = it
+                                preferences.setKeyboardMacrosEnabled(it)
+                            },
+                        )
+                    }
                 }
             }
         }
@@ -246,27 +304,11 @@ fun HomeScreen(
         }
 
         item {
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(22.dp),
-                color = MaterialTheme.colorScheme.surfaceContainerLow,
-            ) {
-                Column(
-                    modifier = Modifier.padding(18.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Text(
-                        text = stringResource(R.string.whitelist_notice_title),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                    Text(
-                        text = stringResource(R.string.whitelist_notice_description),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
+            RoadmapButton(
+                title = stringResource(R.string.roadmap_auto_ime),
+                description = stringResource(R.string.roadmap_auto_ime_description),
+                onClick = onOpenAutoIme,
+            )
         }
     }
 
@@ -304,6 +346,42 @@ fun HomeScreen(
                     Text(stringResource(R.string.cancel))
                 }
             },
+        )
+    }
+
+}
+
+@Composable
+private fun RoadmapButton(
+    title: String,
+    description: String,
+    onClick: () -> Unit,
+) {
+    FilledTonalButton(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        contentPadding = PaddingValues(horizontal = 18.dp, vertical = 14.dp),
+    ) {
+        Column(
+            modifier = Modifier.weight(1f),
+            horizontalAlignment = Alignment.Start,
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Text(
+                text = description,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
+            )
+        }
+        Text(
+            text = stringResource(R.string.roadmap_status_planned),
+            style = MaterialTheme.typography.labelMedium,
         )
     }
 }

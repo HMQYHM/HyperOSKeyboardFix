@@ -4,9 +4,14 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
+import android.os.Bundle
+import io.github.hmqyhm.hyperoskeyboardfix.model.KeyboardMacro
 import java.util.Locale
 
-class ModulePreferences(private val context: Context) {
+class ModulePreferences(
+    private val context: Context,
+    private val publishChanges: Boolean = true,
+) {
     private val preferences: SharedPreferences =
         context.getSharedPreferences(ConfigKeys.FILE_NAME, Context.MODE_PRIVATE)
 
@@ -16,7 +21,9 @@ class ModulePreferences(private val context: Context) {
         initializeShortcutDefaults()
         initializeLanguage()
         ensureConfigVersion()
-        removeLegacyMacroConfiguration()
+        if (publishChanges) {
+            publishConfigSnapshot()
+        }
     }
 
     fun isMasterEnabled(): Boolean =
@@ -45,6 +52,21 @@ class ModulePreferences(private val context: Context) {
         }
     }
 
+    fun inputMode(): String = preferences.getString(
+        ConfigKeys.INPUT_MODE,
+        ConfigKeys.INPUT_MODE_COMPATIBILITY,
+    ) ?: ConfigKeys.INPUT_MODE_COMPATIBILITY
+
+    fun setInputMode(mode: String) {
+        require(
+            mode == ConfigKeys.INPUT_MODE_COMPATIBILITY ||
+                mode == ConfigKeys.INPUT_MODE_DIRECT,
+        )
+        commitConfigurationChange {
+            it.putString(ConfigKeys.INPUT_MODE, mode)
+        }
+    }
+
     fun enabledShortcutCount(): Int = if (areAllShortcutsEnabled()) 1 else 0
 
     fun whitelist(): Set<String> =
@@ -58,8 +80,103 @@ class ModulePreferences(private val context: Context) {
         }
     }
 
+    fun isAutoImeEnabled(): Boolean =
+        preferences.getBoolean(ConfigKeys.AUTO_IME_ENABLED, false)
+
+    fun setAutoImeEnabled(enabled: Boolean) {
+        commitConfigurationChange { it.putBoolean(ConfigKeys.AUTO_IME_ENABLED, enabled) }
+    }
+
+    fun autoImeId(): String =
+        preferences.getString(ConfigKeys.AUTO_IME_ID, "").orEmpty()
+
+    fun setAutoImeId(id: String) {
+        commitConfigurationChange { it.putString(ConfigKeys.AUTO_IME_ID, id) }
+    }
+
+    fun isAutoImeSwitchOnce(): Boolean =
+        preferences.getBoolean(ConfigKeys.AUTO_IME_SWITCH_ONCE, false)
+
+    fun setAutoImeSwitchOnce(enabled: Boolean) {
+        commitConfigurationChange { it.putBoolean(ConfigKeys.AUTO_IME_SWITCH_ONCE, enabled) }
+    }
+
+    fun keyboardMacros(): List<KeyboardMacro> = KeyboardMacro.decode(
+        preferences.getString(ConfigKeys.KEYBOARD_MACROS_JSON, "[]").orEmpty(),
+    )
+
+    fun areKeyboardMacrosEnabled(): Boolean =
+        preferences.getBoolean(ConfigKeys.KEYBOARD_MACROS_ENABLED, true)
+
+    fun setKeyboardMacrosEnabled(enabled: Boolean) {
+        commitConfigurationChange {
+            it.putBoolean(ConfigKeys.KEYBOARD_MACROS_ENABLED, enabled)
+        }
+    }
+
+    fun saveKeyboardMacros(macros: List<KeyboardMacro>) {
+        commitConfigurationChange {
+            it.putString(ConfigKeys.KEYBOARD_MACROS_JSON, KeyboardMacro.encode(macros))
+        }
+    }
+
+    fun notificationsEnabled(): Boolean =
+        preferences.getBoolean(ConfigKeys.NOTIFICATIONS_ENABLED, true)
+
+    fun notifyAppOpen(): Boolean =
+        preferences.getBoolean(ConfigKeys.NOTIFY_APP_OPEN, true)
+
+    fun notifyAutoIme(): Boolean =
+        preferences.getBoolean(ConfigKeys.NOTIFY_AUTO_IME, true)
+
+    fun notifyMacro(): Boolean =
+        preferences.getBoolean(ConfigKeys.NOTIFY_MACRO, true)
+
+    fun notificationAutoDismiss(): Boolean =
+        preferences.getBoolean(ConfigKeys.NOTIFICATION_AUTO_DISMISS, true)
+
+    fun notificationTitle(): String =
+        preferences.getString(ConfigKeys.NOTIFICATION_TITLE, "").orEmpty()
+
+    fun setNotificationSettings(
+        enabled: Boolean,
+        appOpen: Boolean,
+        autoIme: Boolean,
+        macro: Boolean,
+        autoDismiss: Boolean,
+        title: String,
+    ) {
+        commitConfigurationChange {
+            it.putBoolean(ConfigKeys.NOTIFICATIONS_ENABLED, enabled)
+                .putBoolean(ConfigKeys.NOTIFY_APP_OPEN, appOpen)
+                .putBoolean(ConfigKeys.NOTIFY_AUTO_IME, autoIme)
+                .putBoolean(ConfigKeys.NOTIFY_MACRO, macro)
+                .putBoolean(ConfigKeys.NOTIFICATION_AUTO_DISMISS, autoDismiss)
+                .putString(ConfigKeys.NOTIFICATION_TITLE, title.trim())
+        }
+    }
+
     fun configVersion(): Long =
         preferences.getLong(ConfigKeys.CONFIG_VERSION, 0L)
+
+    fun configBundle(): Bundle = Bundle().apply {
+        putLong(ConfigContract.BUNDLE_CONFIG_VERSION, configVersion())
+        putBoolean(ConfigContract.BUNDLE_MASTER_ENABLED, isMasterEnabled())
+        putStringArrayList(ConfigContract.BUNDLE_WHITELIST, ArrayList(whitelist()))
+        putBoolean(ConfigKeys.ALL_SHORTCUTS_ENABLED, areAllShortcutsEnabled())
+        putString(ConfigKeys.INPUT_MODE, inputMode())
+        putBoolean(ConfigKeys.AUTO_IME_ENABLED, isAutoImeEnabled())
+        putString(ConfigKeys.AUTO_IME_ID, autoImeId())
+        putBoolean(ConfigKeys.AUTO_IME_SWITCH_ONCE, isAutoImeSwitchOnce())
+        putString(ConfigKeys.KEYBOARD_MACROS_JSON, KeyboardMacro.encode(keyboardMacros()))
+        putBoolean(ConfigKeys.KEYBOARD_MACROS_ENABLED, areKeyboardMacrosEnabled())
+        putBoolean(ConfigKeys.NOTIFICATIONS_ENABLED, notificationsEnabled())
+        putBoolean(ConfigKeys.NOTIFY_APP_OPEN, notifyAppOpen())
+        putBoolean(ConfigKeys.NOTIFY_AUTO_IME, notifyAutoIme())
+        putBoolean(ConfigKeys.NOTIFY_MACRO, notifyMacro())
+        putBoolean(ConfigKeys.NOTIFICATION_AUTO_DISMISS, notificationAutoDismiss())
+        putString(ConfigKeys.NOTIFICATION_TITLE, notificationTitle())
+    }
 
     fun languageTag(): String =
         preferences.getString(
@@ -74,12 +191,12 @@ class ModulePreferences(private val context: Context) {
     }
 
     fun recordLaunchAndShouldShowStarPrompt(): Boolean {
-        if (preferences.getBoolean(ConfigKeys.STAR_PROMPT_SHOWN, false)) {
+        if (preferences.getInt(KEY_STAR_PROMPT_SHOWN_VERSION, 0) >= STAR_PROMPT_VERSION) {
             return false
         }
-        val launchCount = preferences.getInt(ConfigKeys.APP_LAUNCH_COUNT, 0) + 1
+        val launchCount = preferences.getInt(KEY_STAR_PROMPT_LAUNCH_COUNT, 0) + 1
         preferences.edit()
-            .putInt(ConfigKeys.APP_LAUNCH_COUNT, launchCount)
+            .putInt(KEY_STAR_PROMPT_LAUNCH_COUNT, launchCount)
             .apply()
         return launchCount == STAR_PROMPT_LAUNCH_COUNT
     }
@@ -87,7 +204,29 @@ class ModulePreferences(private val context: Context) {
     fun markStarPromptShown() {
         preferences.edit()
             .putBoolean(ConfigKeys.STAR_PROMPT_SHOWN, true)
+            .putInt(KEY_STAR_PROMPT_SHOWN_VERSION, STAR_PROMPT_VERSION)
             .apply()
+    }
+
+    fun resetToDefaults() {
+        commitConfigurationChange { editor ->
+            editor
+                .putBoolean(ConfigKeys.MASTER_ENABLED, false)
+                .putBoolean(ConfigKeys.ALL_SHORTCUTS_ENABLED, true)
+                .putString(ConfigKeys.INPUT_MODE, ConfigKeys.INPUT_MODE_DIRECT)
+                .putStringSet(ConfigKeys.REMOTE_APP_WHITELIST, emptySet())
+                .putBoolean(ConfigKeys.AUTO_IME_ENABLED, false)
+                .putString(ConfigKeys.AUTO_IME_ID, "")
+                .putBoolean(ConfigKeys.AUTO_IME_SWITCH_ONCE, false)
+                .putString(ConfigKeys.KEYBOARD_MACROS_JSON, "[]")
+                .putBoolean(ConfigKeys.KEYBOARD_MACROS_ENABLED, true)
+                .putBoolean(ConfigKeys.NOTIFICATIONS_ENABLED, true)
+                .putBoolean(ConfigKeys.NOTIFY_APP_OPEN, true)
+                .putBoolean(ConfigKeys.NOTIFY_AUTO_IME, true)
+                .putBoolean(ConfigKeys.NOTIFY_MACRO, true)
+                .putBoolean(ConfigKeys.NOTIFICATION_AUTO_DISMISS, true)
+                .putString(ConfigKeys.NOTIFICATION_TITLE, "")
+        }
     }
 
     private fun initializeDefaultWhitelist() {
@@ -186,13 +325,6 @@ class ModulePreferences(private val context: Context) {
         commitConfigurationChange { }
     }
 
-    private fun removeLegacyMacroConfiguration() {
-        if (!preferences.contains(LEGACY_KEYBOARD_MAPPINGS)) return
-        commitConfigurationChange { editor ->
-            editor.remove(LEGACY_KEYBOARD_MAPPINGS)
-        }
-    }
-
     private fun commitConfigurationChange(
         update: (SharedPreferences.Editor) -> Unit,
     ) {
@@ -204,9 +336,24 @@ class ModulePreferences(private val context: Context) {
                 .putLong(ConfigKeys.CONFIG_VERSION, nextVersion)
                 .commit()
             if (committed) {
-                context.contentResolver.notifyChange(ConfigContract.changedUri, null)
+                val published = publishChanges && publishConfigSnapshot()
+                if (!published) {
+                    context.contentResolver.notifyChange(ConfigContract.changedUri, null)
+                }
             }
         }
+    }
+
+    private fun publishConfigSnapshot(): Boolean = try {
+        val response = context.contentResolver.call(
+            ConfigContract.baseUri,
+            ConfigContract.METHOD_PUBLISH_CONFIG,
+            null,
+            configBundle(),
+        )
+        response?.getBoolean(ConfigContract.BUNDLE_AVAILABLE, false) == true
+    } catch (_: Throwable) {
+        false
     }
 
     companion object {
@@ -217,8 +364,10 @@ class ModulePreferences(private val context: Context) {
         private const val KEY_SHORTCUT_DEFAULTS_INITIALIZED =
             "shortcut_defaults_initialized"
         private const val LEGACY_FILE_NAME = "hyperos_keyboard_fix"
-        private const val LEGACY_KEYBOARD_MAPPINGS = "keyboard_mappings"
         private const val STAR_PROMPT_LAUNCH_COUNT = 3
+        private const val STAR_PROMPT_VERSION = 2
+        private const val KEY_STAR_PROMPT_SHOWN_VERSION = "star_prompt_shown_version"
+        private const val KEY_STAR_PROMPT_LAUNCH_COUNT = "star_prompt_launch_count_v2"
 
         val DEFAULT_REMOTE_APPS = setOf(
             "com.valvesoftware.steamlink",

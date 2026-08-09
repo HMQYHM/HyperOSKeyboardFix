@@ -3,7 +3,9 @@ package io.github.hmqyhm.hyperoskeyboardfix.hook
 import android.content.ComponentName
 import android.os.IBinder
 import android.view.InputDevice
+import android.view.KeyCharacterMap
 import android.view.KeyEvent
+import io.github.hmqyhm.hyperoskeyboardfix.config.ConfigKeys
 import io.github.hmqyhm.hyperoskeyboardfix.utils.HookLog
 import de.robv.android.xposed.XC_MethodHook
 import de.robv.android.xposed.XposedBridge
@@ -124,6 +126,15 @@ object ExactMiuiPolicyDiagnosticHook {
         override fun beforeHookedMethod(param: MethodHookParam) {
             try {
                 val event = param.args.filterIsInstance<KeyEvent>().firstOrNull() ?: return
+                if (isModuleInjectedEvent(event)) {
+                    when (method.name) {
+                        "interceptKeyBeforeDispatching" -> param.result = 0L
+                        "handleAltTab", "handleMetaKey" -> param.result = null
+                        "disableAOSPShortcut" -> param.result = true
+                        "interceptKey" -> param.result = false
+                    }
+                    return
+                }
                 if (!isPhysicalKeyboardEvent(event)) return
 
                 val snapshot = ConfigProviderClient.snapshot()
@@ -131,7 +142,13 @@ object ExactMiuiPolicyDiagnosticHook {
                 val logDisableResult = method.name == "disableAOSPShortcut" &&
                     event.keyCode in DISABLE_RESULT_KEYS
                 val configurableEvent = isShortcutCandidate(event)
-                if (!logExactPath && !logDisableResult && !configurableEvent) return
+                val macroCandidate = snapshot.keyboardMacrosEnabled && snapshot.keyboardMacros.any {
+                    it.enabled && it.triggerKeyCode == event.keyCode
+                }
+                if (
+                    !logExactPath && !logDisableResult &&
+                    !configurableEvent && !macroCandidate
+                ) return
 
                 val context = buildContext(event, snapshot)
                 param.setObjectExtra(EXTRA_CONTEXT, context)
@@ -141,6 +158,21 @@ object ExactMiuiPolicyDiagnosticHook {
                 }
                 when (method.name) {
                     "interceptKeyBeforeDispatching" -> {
+                        if (context.masterEnabled && context.whitelisted) {
+                            val foreground = context.foregroundPackage
+                            if (
+                                foreground != null &&
+                                snapshot.keyboardMacrosEnabled && MacroExecutor.handle(
+                                    event,
+                                    foreground,
+                                    snapshot.keyboardMacros,
+                                )
+                            ) {
+                                param.setObjectExtra(EXTRA_EVENT_CONSUMED, true)
+                                param.result = -1L
+                                return
+                            }
+                        }
                         if (context.takeoverEnabled) {
                             param.result = 0L
                         }
@@ -210,6 +242,7 @@ object ExactMiuiPolicyDiagnosticHook {
                 if (
                     method.name == "interceptKeyBeforeDispatching" &&
                     context.takeoverEnabled &&
+                    param.getObjectExtra(EXTRA_EVENT_CONSUMED) != true &&
                     param.result == -1L
                 ) {
                     param.result = 0L
@@ -234,7 +267,9 @@ object ExactMiuiPolicyDiagnosticHook {
         }
         val whitelisted = foregroundPackage != null &&
             foregroundPackage in config.whitelist
-        val baseEnabled = config.masterEnabled && whitelisted
+        val baseEnabled = config.masterEnabled &&
+            config.inputMode == ConfigKeys.INPUT_MODE_COMPATIBILITY &&
+            whitelisted
         val metaModeEnabled = baseEnabled &&
             config.allShortcutsEnabled
         val altTabModeEnabled = baseEnabled &&
@@ -353,6 +388,9 @@ object ExactMiuiPolicyDiagnosticHook {
     private fun isFunctionKey(keyCode: Int): Boolean =
         keyCode in KeyEvent.KEYCODE_F1..KeyEvent.KEYCODE_F12
 
+    private fun isModuleInjectedEvent(event: KeyEvent): Boolean =
+        MacroExecutor.consumeInjectedEvent(event)
+
     private fun isPhysicalKeyboardEvent(event: KeyEvent): Boolean =
         event.deviceId >= 0 &&
             event.source and InputDevice.SOURCE_KEYBOARD == InputDevice.SOURCE_KEYBOARD
@@ -426,4 +464,5 @@ object ExactMiuiPolicyDiagnosticHook {
 
     private const val EXTRA_CONTEXT = "hyperos_keyboard_fix_exact_context"
     private const val EXTRA_LOG_EXACT_PATH = "hyperos_keyboard_fix_exact_path"
+    private const val EXTRA_EVENT_CONSUMED = "hyperos_keyboard_fix_event_consumed"
 }
