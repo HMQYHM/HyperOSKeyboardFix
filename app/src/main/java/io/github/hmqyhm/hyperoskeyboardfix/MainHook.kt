@@ -3,6 +3,8 @@ package io.github.hmqyhm.hyperoskeyboardfix
 import io.github.hmqyhm.hyperoskeyboardfix.hook.ConfigProviderClient
 import io.github.hmqyhm.hyperoskeyboardfix.hook.ExactMiuiPolicyDiagnosticHook
 import io.github.hmqyhm.hyperoskeyboardfix.hook.SystemProcessContext
+import io.github.hmqyhm.hyperoskeyboardfix.hook.AutoImeController
+import io.github.hmqyhm.hyperoskeyboardfix.hook.DirectInputChannelHook
 import io.github.hmqyhm.hyperoskeyboardfix.utils.HookLog
 import de.robv.android.xposed.IXposedHookLoadPackage
 import de.robv.android.xposed.callbacks.XC_LoadPackage
@@ -25,8 +27,12 @@ class MainHook : IXposedHookLoadPackage {
                 )
             } else {
                 ConfigProviderClient.initialize(context)
+                if (lpparam.packageName == "android") {
+                    AutoImeController.initialize(context)
+                }
             }
             if (lpparam.packageName == "android") {
+                DirectInputChannelHook.install(lpparam.classLoader)
                 ExactMiuiPolicyDiagnosticHook.install(lpparam.classLoader)
             }
         } catch (error: Throwable) {
