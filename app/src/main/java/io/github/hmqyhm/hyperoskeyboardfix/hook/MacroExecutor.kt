@@ -3,12 +3,17 @@ package io.github.hmqyhm.hyperoskeyboardfix.hook
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.SystemClock
+import android.content.res.Resources
 import android.view.InputDevice
+import android.view.InputEvent
 import android.view.KeyCharacterMap
 import android.view.KeyEvent
+import android.view.MotionEvent
 import io.github.hmqyhm.hyperoskeyboardfix.model.KeyboardMacro
-import io.github.hmqyhm.hyperoskeyboardfix.model.MacroActionType
+import io.github.hmqyhm.hyperoskeyboardfix.model.MacroActionStepType
 import io.github.hmqyhm.hyperoskeyboardfix.model.MacroKeyStep
+import io.github.hmqyhm.hyperoskeyboardfix.model.MacroMouseAction
+import io.github.hmqyhm.hyperoskeyboardfix.model.MacroMouseStep
 import io.github.hmqyhm.hyperoskeyboardfix.model.MacroRepeatMode
 import io.github.hmqyhm.hyperoskeyboardfix.utils.HookLog
 import de.robv.android.xposed.XposedHelpers
@@ -103,14 +108,179 @@ object MacroExecutor {
         active: AtomicBoolean,
         target: InjectionTarget,
     ) {
-        when (macro.actionType) {
-            MacroActionType.TEXT -> injectText(macro.text, active, target)
-            MacroActionType.SEQUENCE -> macro.steps.forEach { step ->
-                if (!active.get()) return
-                injectStep(step, target, active)
-                pause(step.delayAfterMs.coerceAtLeast(MIN_STEP_TIMING_MS), active)
+        macro.effectiveActions().forEach { action ->
+            if (!active.get()) return
+            when (action.type) {
+                MacroActionStepType.TEXT -> {
+                    injectText(action.text, active, target)
+                    pause(DEFAULT_ACTION_DELAY_MS, active)
+                }
+                MacroActionStepType.KEY -> action.keyStep?.let { step ->
+                    injectStep(step, target, active)
+                    pause(step.delayAfterMs.coerceAtLeast(MIN_STEP_TIMING_MS), active)
+                }
+                MacroActionStepType.MOUSE -> action.mouseStep?.let { step ->
+                    injectMouseStep(step, target, active)
+                    pause(step.delayAfterMs.coerceAtLeast(MIN_STEP_TIMING_MS), active)
+                }
             }
         }
+    }
+
+    private fun injectMouseStep(
+        step: MacroMouseStep,
+        target: InjectionTarget,
+        active: AtomicBoolean,
+    ) {
+        val size = resolveDisplaySize(target.displayId)
+        val x = step.xFraction.coerceIn(0f, 1f) * (size.first - 1).coerceAtLeast(1)
+        val y = step.yFraction.coerceIn(0f, 1f) * (size.second - 1).coerceAtLeast(1)
+        injectMotion(mouseMotionEvent(MotionEvent.ACTION_HOVER_MOVE, x, y, 0, target))
+        when (step.action) {
+            MacroMouseAction.LEFT_CLICK -> injectMouseClick(
+                x = x,
+                y = y,
+                button = MotionEvent.BUTTON_PRIMARY,
+                holdDurationMs = step.holdDurationMs,
+                target = target,
+                active = active,
+            )
+            MacroMouseAction.RIGHT_CLICK -> injectMouseClick(
+                x = x,
+                y = y,
+                button = MotionEvent.BUTTON_SECONDARY,
+                holdDurationMs = step.holdDurationMs,
+                target = target,
+                active = active,
+            )
+            MacroMouseAction.SCROLL_UP, MacroMouseAction.SCROLL_DOWN -> {
+                val ticks = (step.distanceFraction.coerceIn(0.01f, 1f) * 20f)
+                    .toInt().coerceIn(1, 20)
+                val axisValue = if (step.action == MacroMouseAction.SCROLL_UP) 1f else -1f
+                val interval = (step.gestureDurationMs / ticks).coerceAtLeast(MIN_STEP_TIMING_MS)
+                repeat(ticks) {
+                    if (!active.get()) return
+                    injectMotion(
+                        mouseMotionEvent(
+                            action = MotionEvent.ACTION_SCROLL,
+                            x = x,
+                            y = y,
+                            buttonState = 0,
+                            target = target,
+                            verticalScroll = axisValue,
+                        ),
+                    )
+                    pause(interval, active)
+                }
+            }
+        }
+    }
+
+    private fun injectMouseClick(
+        x: Float,
+        y: Float,
+        button: Int,
+        holdDurationMs: Long,
+        target: InjectionTarget,
+        active: AtomicBoolean,
+    ) {
+        val downTime = SystemClock.uptimeMillis()
+        injectMotion(mouseMotionEvent(MotionEvent.ACTION_DOWN, x, y, button, target, downTime))
+        try {
+            injectMotion(
+                mouseMotionEvent(
+                    MotionEvent.ACTION_BUTTON_PRESS,
+                    x,
+                    y,
+                    button,
+                    target,
+                    downTime,
+                    actionButton = button,
+                ),
+            )
+            pause(holdDurationMs.coerceAtLeast(MIN_STEP_TIMING_MS), active)
+        } finally {
+            runCatching {
+                injectMotion(
+                    mouseMotionEvent(
+                        MotionEvent.ACTION_BUTTON_RELEASE,
+                        x,
+                        y,
+                        0,
+                        target,
+                        downTime,
+                        actionButton = button,
+                    ),
+                )
+            }
+            runCatching {
+                injectMotion(mouseMotionEvent(MotionEvent.ACTION_UP, x, y, 0, target, downTime))
+            }
+        }
+    }
+
+    private fun mouseMotionEvent(
+        action: Int,
+        x: Float,
+        y: Float,
+        buttonState: Int,
+        target: InjectionTarget,
+        downTime: Long = SystemClock.uptimeMillis(),
+        verticalScroll: Float = 0f,
+        actionButton: Int = 0,
+    ): MotionEvent {
+        val properties = MotionEvent.PointerProperties().apply {
+            id = 0
+            toolType = MotionEvent.TOOL_TYPE_MOUSE
+        }
+        val coordinates = MotionEvent.PointerCoords().apply {
+            this.x = x
+            this.y = y
+            pressure = if (action == MotionEvent.ACTION_DOWN) 1f else 0f
+            size = 1f
+            if (verticalScroll != 0f) setAxisValue(MotionEvent.AXIS_VSCROLL, verticalScroll)
+        }
+        return MotionEvent.obtain(
+            downTime,
+            SystemClock.uptimeMillis(),
+            action,
+            1,
+            arrayOf(properties),
+            arrayOf(coordinates),
+            0,
+            buttonState,
+            1f,
+            1f,
+            KeyCharacterMap.VIRTUAL_KEYBOARD,
+            0,
+            InputDevice.SOURCE_MOUSE,
+            0,
+        ).also { event ->
+            if (actionButton != 0) {
+                try {
+                    XposedHelpers.callMethod(event, "setActionButton", actionButton)
+                } catch (_: Throwable) {
+                    // ACTION_DOWN/UP with buttonState remains a safe compatibility fallback.
+                }
+            }
+            markInputDisplayId(event, target.displayId)
+        }
+    }
+
+    private fun resolveDisplaySize(displayId: Int): Pair<Int, Int> = try {
+        val globalClass = XposedHelpers.findClass(
+            "android.hardware.display.DisplayManagerGlobal",
+            null,
+        )
+        val global = XposedHelpers.callStaticMethod(globalClass, "getInstance")
+        val info = XposedHelpers.callMethod(global, "getDisplayInfo", displayId.coerceAtLeast(0))
+        val width = XposedHelpers.getIntField(info, "logicalWidth")
+        val height = XposedHelpers.getIntField(info, "logicalHeight")
+        require(width > 0 && height > 0)
+        width to height
+    } catch (_: Throwable) {
+        val metrics = Resources.getSystem().displayMetrics
+        metrics.widthPixels.coerceAtLeast(1) to metrics.heightPixels.coerceAtLeast(1)
     }
 
     private fun injectText(
@@ -172,6 +342,14 @@ object MacroExecutor {
 
     private fun inject(event: KeyEvent) {
         markPendingInjected(event)
+        injectInputEvent(event)
+    }
+
+    private fun injectMotion(event: MotionEvent) {
+        injectInputEvent(event)
+    }
+
+    private fun injectInputEvent(event: InputEvent) {
         val globalClass = XposedHelpers.findClassIfExists(
             "android.hardware.input.InputManagerGlobal",
             null,
@@ -239,6 +417,11 @@ object MacroExecutor {
     )
 
     private fun markDisplayId(event: KeyEvent, displayId: Int): KeyEvent {
+        markInputDisplayId(event, displayId)
+        return event
+    }
+
+    private fun markInputDisplayId(event: InputEvent, displayId: Int) {
         if (displayId >= 0) {
             try {
                 XposedHelpers.callMethod(event, "setDisplayId", displayId)
@@ -246,7 +429,6 @@ object MacroExecutor {
                 // The hidden setter is ROM-dependent; the default display is a safe fallback.
             }
         }
-        return event
     }
 
     private fun stop(id: String) {
@@ -300,6 +482,7 @@ object MacroExecutor {
     private const val META_MASK = KeyEvent.META_CTRL_ON or KeyEvent.META_ALT_ON or
         KeyEvent.META_SHIFT_ON or KeyEvent.META_META_ON
     private const val TEXT_EVENT_INTERVAL_MS = 8L
+    private const val DEFAULT_ACTION_DELAY_MS = 50L
     private const val INJECTED_EVENT_TIMEOUT_MS = 2_000L
     private const val MIN_STEP_TIMING_MS = 10L
 }

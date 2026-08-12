@@ -6,6 +6,7 @@ import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.os.Bundle
 import io.github.hmqyhm.hyperoskeyboardfix.model.KeyboardMacro
+import java.io.File
 import java.util.Locale
 
 class ModulePreferences(
@@ -226,6 +227,9 @@ class ModulePreferences(
                 .putBoolean(ConfigKeys.NOTIFY_MACRO, true)
                 .putBoolean(ConfigKeys.NOTIFICATION_AUTO_DISMISS, true)
                 .putString(ConfigKeys.NOTIFICATION_TITLE, "")
+        }
+        runCatching {
+            File(context.filesDir, "macro_mouse_backgrounds").deleteRecursively()
         }
     }
 
