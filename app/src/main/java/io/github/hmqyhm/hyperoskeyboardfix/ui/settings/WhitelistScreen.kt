@@ -134,7 +134,6 @@ fun WhitelistScreen(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                TextButton(onClick = ::requestBack) { Text(stringResource(R.string.back)) }
                 Text(
                     text = stringResource(R.string.whitelist_title),
                     modifier = Modifier.weight(1f),

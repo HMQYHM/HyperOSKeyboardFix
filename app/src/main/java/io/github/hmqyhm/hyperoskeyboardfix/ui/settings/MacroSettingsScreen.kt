@@ -21,6 +21,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -41,6 +42,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
@@ -48,8 +50,11 @@ import io.github.hmqyhm.hyperoskeyboardfix.BuildConfig
 import io.github.hmqyhm.hyperoskeyboardfix.R
 import io.github.hmqyhm.hyperoskeyboardfix.config.ModulePreferences
 import io.github.hmqyhm.hyperoskeyboardfix.model.KeyboardMacro
+import io.github.hmqyhm.hyperoskeyboardfix.model.MacroActionStep
+import io.github.hmqyhm.hyperoskeyboardfix.model.MacroActionStepType
 import io.github.hmqyhm.hyperoskeyboardfix.model.MacroActionType
 import io.github.hmqyhm.hyperoskeyboardfix.model.MacroKeyStep
+import io.github.hmqyhm.hyperoskeyboardfix.model.MacroMouseStep
 import io.github.hmqyhm.hyperoskeyboardfix.model.MacroRepeatMode
 import java.util.UUID
 import java.io.File
@@ -59,7 +64,6 @@ import org.json.JSONObject
 fun MacroSettingsScreen(
     preferences: ModulePreferences,
     contentPadding: PaddingValues,
-    onBack: () -> Unit,
 ) {
     val context = LocalContext.current
     var macros by remember { mutableStateOf(preferences.keyboardMacros()) }
@@ -101,19 +105,16 @@ fun MacroSettingsScreen(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                TextButton(onClick = onBack) { Text(stringResource(R.string.back)) }
-                Column {
-                    Text(
-                        stringResource(R.string.roadmap_keyboard_macro),
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold,
-                    )
-                    Text(
-                        stringResource(R.string.macro_screen_description),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
+            Column {
+                Text(
+                    stringResource(R.string.roadmap_keyboard_macro),
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                )
+                Text(
+                    stringResource(R.string.macro_screen_description),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         }
         item {
@@ -206,14 +207,10 @@ fun MacroSettingsScreen(
                             )
                         }
                         Text(
-                            if (macro.actionType == MacroActionType.TEXT) {
-                                stringResource(R.string.macro_text_summary, macro.text)
-                            } else {
-                                stringResource(
-                                    R.string.macro_sequence_summary,
-                                    macro.steps.joinToString(" → ", limit = 8) { stepDisplayName(it) },
-                                )
-                            },
+                            stringResource(
+                                R.string.macro_mixed_summary,
+                                macro.effectiveActions().size,
+                            ),
                             style = MaterialTheme.typography.bodyMedium,
                         )
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -246,10 +243,14 @@ fun MacroSettingsScreen(
                 editingMacro = null
             },
             onSave = { macro ->
+                val replacedBackground = editingMacro?.mouseBackgroundFile
                 persist(
                     if (editingMacro == null || importing) macros + macro
                     else macros.map { if (it.id == macro.id) macro else it },
                 )
+                if (!importing && replacedBackground != macro.mouseBackgroundFile) {
+                    deleteMacroBackground(context, replacedBackground)
+                }
                 creating = false
                 importing = false
                 editingMacro = null
@@ -293,6 +294,7 @@ fun MacroSettingsScreen(
             confirmButton = {
                 TextButton(onClick = {
                     persist(macros.filterNot { it.id == macro.id })
+                    deleteMacroBackground(context, macro.mouseBackgroundFile)
                     pendingDelete = null
                 }) { Text(stringResource(R.string.confirm_delete)) }
             },
@@ -312,6 +314,7 @@ private fun MacroEditorDialog(
     onDismiss: () -> Unit,
     onSave: (KeyboardMacro) -> Unit,
 ) {
+    val context = LocalContext.current
     var name by remember(initial?.id) { mutableStateOf(initial?.name.orEmpty()) }
     var selectedPackages by remember(initial?.id) {
         mutableStateOf(initial?.packageNames.orEmpty())
@@ -322,11 +325,13 @@ private fun MacroEditorDialog(
     var triggerMetaState by remember(initial?.id) {
         mutableIntStateOf(initial?.triggerMetaState ?: 0)
     }
-    var actionType by remember(initial?.id) {
-        mutableStateOf(initial?.actionType ?: MacroActionType.TEXT)
+    var actions by remember(initial?.id) {
+        mutableStateOf(initial?.effectiveActions().orEmpty())
     }
-    var textValue by remember(initial?.id) { mutableStateOf(initial?.text.orEmpty()) }
-    var steps by remember(initial?.id) { mutableStateOf(initial?.steps.orEmpty()) }
+    var textValue by remember(initial?.id) { mutableStateOf("") }
+    var mouseBackgroundFile by remember(initial?.id) {
+        mutableStateOf(initial?.mouseBackgroundFile)
+    }
     var repeatMode by remember(initial?.id) {
         mutableStateOf(initial?.repeatMode ?: MacroRepeatMode.ONCE)
     }
@@ -338,6 +343,7 @@ private fun MacroEditorDialog(
     }
     var error by remember { mutableStateOf(false) }
     var showRecorder by remember { mutableStateOf(false) }
+    var showMouseRecorder by remember { mutableStateOf(false) }
     var showAppChooser by remember { mutableStateOf(false) }
     var showCancelConfirmation by remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
@@ -400,49 +406,85 @@ private fun MacroEditorDialog(
                     )
                 }
                 item {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        FilterChip(
-                            selected = actionType == MacroActionType.TEXT,
-                            onClick = { actionType = MacroActionType.TEXT },
-                            label = { Text(stringResource(R.string.macro_action_text)) },
-                        )
-                        FilterChip(
-                            selected = actionType == MacroActionType.SEQUENCE,
-                            onClick = { actionType = MacroActionType.SEQUENCE },
-                            label = { Text(stringResource(R.string.macro_action_sequence)) },
-                        )
-                    }
-                }
-                item {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        if (actionType == MacroActionType.TEXT) {
-                            OutlinedTextField(
-                                value = textValue,
-                                onValueChange = { textValue = it },
-                                label = { Text(stringResource(R.string.macro_text_content)) },
-                                modifier = Modifier.weight(1f),
-                            )
-                        } else {
-                            Text(
-                                stringResource(R.string.macro_recorded_count, steps.size),
-                                modifier = Modifier.weight(1f),
+                        OutlinedTextField(
+                            value = textValue,
+                            onValueChange = { textValue = it },
+                            label = { Text(stringResource(R.string.macro_text_content)) },
+                            modifier = Modifier.weight(1f),
+                        )
+                        OutlinedButton(
+                            enabled = textValue.isNotBlank(),
+                            onClick = {
+                                actions = actions + MacroActionStep.text(textValue)
+                                textValue = ""
+                            },
+                        ) { Text(stringResource(R.string.macro_add_text_action)) }
+                        OutlinedButton(onClick = { showRecorder = true }) {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_keyboard),
+                                contentDescription = stringResource(R.string.macro_keyboard_title),
                             )
                         }
-                        OutlinedButton(onClick = { showRecorder = true }) {
-                            Text("⌨")
+                        OutlinedButton(onClick = { showMouseRecorder = true }) {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_mouse_toolbar),
+                                contentDescription = stringResource(R.string.macro_mouse_canvas_title),
+                            )
                         }
                     }
                 }
-                if (steps.isNotEmpty()) {
+                item {
+                    Text(
+                        stringResource(R.string.macro_unified_timeline, actions.size),
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                }
+                if (actions.isEmpty()) {
                     item {
                         Text(
-                            steps.joinToString(" → ", limit = 10) { stepDisplayName(it) },
+                            stringResource(R.string.macro_unified_empty),
                             style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
+                    }
+                } else {
+                    items(actions.size) { index ->
+                        val action = actions[index]
+                        Card(modifier = Modifier.fillMaxWidth()) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            ) {
+                                Text("${index + 1}. ${macroActionDisplayName(action)}", Modifier.weight(1f))
+                                TextButton(
+                                    enabled = index > 0,
+                                    onClick = { actions = actions.moveItem(index, index - 1) },
+                                ) {
+                                    Icon(
+                                        painterResource(R.drawable.ic_arrow_up),
+                                        contentDescription = null,
+                                    )
+                                }
+                                TextButton(
+                                    enabled = index < actions.lastIndex,
+                                    onClick = { actions = actions.moveItem(index, index + 1) },
+                                ) {
+                                    Icon(
+                                        painterResource(R.drawable.ic_arrow_down),
+                                        contentDescription = null,
+                                    )
+                                }
+                                TextButton(onClick = {
+                                    actions = actions.toMutableList().also { it.removeAt(index) }
+                                }) { Text(stringResource(R.string.macro_delete)) }
+                            }
+                        }
                     }
                 }
                 item {
@@ -487,11 +529,7 @@ private fun MacroEditorDialog(
         },
         confirmButton = {
             TextButton(onClick = {
-                val validAction = if (actionType == MacroActionType.TEXT) {
-                    textValue.isNotBlank()
-                } else {
-                    steps.isNotEmpty()
-                }
+                val validAction = actions.isNotEmpty()
                 if (name.isBlank() || triggerKeyCode == 0 || !validAction) {
                     error = true
                 } else {
@@ -503,9 +541,12 @@ private fun MacroEditorDialog(
                             packageNames = selectedPackages,
                             triggerKeyCode = triggerKeyCode,
                             triggerMetaState = triggerMetaState,
-                            actionType = actionType,
-                            text = if (actionType == MacroActionType.TEXT) textValue else "",
-                            steps = if (actionType == MacroActionType.SEQUENCE) steps else emptyList(),
+                            actionType = MacroActionType.SEQUENCE,
+                            text = "",
+                            steps = emptyList(),
+                            mouseSteps = emptyList(),
+                            mouseBackgroundFile = mouseBackgroundFile,
+                            actions = actions,
                             repeatMode = repeatMode,
                             repeatCount = repeatCount.toIntOrNull()?.coerceIn(1, 100) ?: 1,
                             repeatIntervalMs = repeatInterval.toLongOrNull()
@@ -531,6 +572,9 @@ private fun MacroEditorDialog(
             confirmButton = {
                 TextButton(onClick = {
                     showCancelConfirmation = false
+                    if (mouseBackgroundFile != initial?.mouseBackgroundFile) {
+                        deleteMacroBackground(context, mouseBackgroundFile)
+                    }
                     onDismiss()
                 }) { Text(stringResource(R.string.confirm_discard_macro)) }
             },
@@ -544,12 +588,37 @@ private fun MacroEditorDialog(
 
     if (showRecorder) {
         MacroKeyboardRecorderDialog(
-            initialSteps = steps,
+            initialSteps = actions.mapNotNull { it.keyStep },
             onDismiss = { showRecorder = false },
             onConfirm = {
-                steps = it
-                actionType = MacroActionType.SEQUENCE
+                actions = replaceActionsOfType(
+                    actions,
+                    MacroActionStepType.KEY,
+                    it.map(MacroActionStep::key),
+                )
                 showRecorder = false
+            },
+        )
+    }
+
+    if (showMouseRecorder) {
+        MouseMacroCanvasDialog(
+            initialSteps = actions.mapNotNull { it.mouseStep },
+            initialBackgroundFile = mouseBackgroundFile,
+            onDismiss = { showMouseRecorder = false },
+            onConfirm = { recordedSteps, backgroundFile ->
+                if (mouseBackgroundFile != initial?.mouseBackgroundFile &&
+                    mouseBackgroundFile != backgroundFile
+                ) {
+                    deleteMacroBackground(context, mouseBackgroundFile)
+                }
+                actions = replaceActionsOfType(
+                    actions,
+                    MacroActionStepType.MOUSE,
+                    recordedSteps.map(MacroActionStep::mouse),
+                )
+                mouseBackgroundFile = backgroundFile
+                showMouseRecorder = false
             },
         )
     }
@@ -612,6 +681,39 @@ private fun repeatModeLabel(mode: MacroRepeatMode): String = stringResource(
     },
 )
 
+@Composable
+private fun macroActionDisplayName(action: MacroActionStep): String = when (action.type) {
+    MacroActionStepType.TEXT ->
+        "${stringResource(R.string.macro_action_text)}: ${action.text.take(32)}"
+    MacroActionStepType.KEY -> action.keyStep?.let(::stepDisplayName).orEmpty()
+    MacroActionStepType.MOUSE -> action.mouseStep?.let { mouseStepDisplayName(it) }.orEmpty()
+}
+
+private fun List<MacroActionStep>.moveItem(from: Int, to: Int): List<MacroActionStep> =
+    toMutableList().also { items ->
+        val item = items.removeAt(from)
+        items.add(to, item)
+    }
+
+private fun replaceActionsOfType(
+    current: List<MacroActionStep>,
+    type: MacroActionStepType,
+    replacements: List<MacroActionStep>,
+): List<MacroActionStep> {
+    val pending = ArrayDeque(replacements)
+    val merged = buildList {
+        current.forEach { action ->
+            if (action.type == type) {
+                pending.removeFirstOrNull()?.let(::add)
+            } else {
+                add(action)
+            }
+        }
+        addAll(pending)
+    }
+    return merged
+}
+
 internal fun triggerName(keyCode: Int, metaState: Int): String = buildList {
     if (metaState and KeyEvent.META_CTRL_ON != 0) add("Ctrl")
     if (metaState and KeyEvent.META_ALT_ON != 0) add("Alt")
@@ -638,7 +740,10 @@ private fun shareMacroAsTextFile(context: Context, macro: KeyboardMacro) {
         .ifBlank { "keyboard_macro" }
     val directory = File(context.cacheDir, "shared_macros").apply { mkdirs() }
     val file = File(directory, "$safeName.txt")
-    file.writeText(macro.toJson().toString(2), Charsets.UTF_8)
+    file.writeText(
+        macro.copy(mouseBackgroundFile = null).toJson().toString(2),
+        Charsets.UTF_8,
+    )
     val uri = FileProvider.getUriForFile(
         context,
         "${BuildConfig.APPLICATION_ID}.files",
@@ -652,4 +757,11 @@ private fun shareMacroAsTextFile(context: Context, macro: KeyboardMacro) {
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
     context.startActivity(Intent.createChooser(share, context.getString(R.string.macro_share)))
+}
+
+private fun deleteMacroBackground(context: Context, fileName: String?) {
+    if (fileName.isNullOrBlank() || '/' in fileName || '\\' in fileName) return
+    runCatching {
+        File(File(context.filesDir, "macro_mouse_backgrounds"), fileName).delete()
+    }
 }

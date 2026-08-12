@@ -51,7 +51,6 @@ import io.github.hmqyhm.hyperoskeyboardfix.R
 import io.github.hmqyhm.hyperoskeyboardfix.config.ConfigContract
 import io.github.hmqyhm.hyperoskeyboardfix.config.ConfigKeys
 import io.github.hmqyhm.hyperoskeyboardfix.config.ModulePreferences
-import io.github.hmqyhm.hyperoskeyboardfix.config.ProviderDiagnostics
 import io.github.hmqyhm.hyperoskeyboardfix.config.ProjectLinks
 import kotlinx.coroutines.delay
 
@@ -131,7 +130,12 @@ fun MainSettingsScreen(
         modifier = Modifier
             .fillMaxSize()
             .padding(contentPadding),
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+        contentPadding = PaddingValues(
+            start = 16.dp,
+            top = 12.dp,
+            end = 16.dp,
+            bottom = 28.dp,
+        ),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item {

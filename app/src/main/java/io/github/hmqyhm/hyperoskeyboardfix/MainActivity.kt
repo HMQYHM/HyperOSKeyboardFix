@@ -1,11 +1,13 @@
 package io.github.hmqyhm.hyperoskeyboardfix
 
 import android.app.LocaleManager
+import android.graphics.Color
 import android.os.Bundle
 import android.os.LocaleList
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.PredictiveBackHandler
 import androidx.activity.compose.setContent
+import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
@@ -85,7 +87,13 @@ class MainActivity : ComponentActivity() {
         val showStarPromptOnLaunch = savedInstanceState == null &&
             initialPreferences.recordLaunchAndShouldShowStarPrompt()
         applyAppLanguage(initialPreferences.languageTag())
-        enableEdgeToEdge()
+        enableEdgeToEdge(
+            navigationBarStyle = SystemBarStyle.auto(
+                Color.TRANSPARENT,
+                Color.TRANSPARENT,
+            ),
+        )
+        window.isNavigationBarContrastEnforced = false
         setContent {
             HyperoskeyboardfixTheme {
                 KeyboardFixApp(
@@ -238,7 +246,6 @@ private fun KeyboardFixApp(
                         AppPage.SHORTCUTS -> MacroSettingsScreen(
                             preferences = preferences,
                             contentPadding = androidx.compose.foundation.layout.PaddingValues(),
-                            onBack = { page = AppPage.HOME },
                         )
                         AppPage.OTHER -> MainSettingsScreen(
                             preferences = preferences,
@@ -255,7 +262,6 @@ private fun KeyboardFixApp(
                         AppPage.MACROS -> MacroSettingsScreen(
                             preferences = preferences,
                             contentPadding = androidx.compose.foundation.layout.PaddingValues(),
-                            onBack = { page = AppPage.SHORTCUTS },
                         )
                             }
                         }
@@ -338,13 +344,16 @@ private fun AppBottomNavigation(
     modifier: Modifier = Modifier,
 ) {
     Surface(
-        modifier = modifier.fillMaxWidth().navigationBarsPadding(),
+        modifier = modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surfaceContainer,
         tonalElevation = 5.dp,
         shadowElevation = 12.dp,
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .navigationBarsPadding()
+                .padding(horizontal = 8.dp, vertical = 6.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             BottomNavigationItem(R.drawable.ic_nav_home, R.string.navigation_home, AppPage.HOME, selectedPage, onSelect)

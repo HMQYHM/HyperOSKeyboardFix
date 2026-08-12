@@ -4,9 +4,9 @@
 
 [简体中文](#简体中文) · [English](#english)
 
-一款让 HyperOS 3 白名单应用完整接收实体键盘快捷键，并支持自动切换输入法与键盘宏的 LSPosed 模块。
+一款让 HyperOS 3 白名单应用完整接收实体键盘快捷键，并支持自动切换输入法、混合键盘宏与鼠标宏的 LSPosed 模块。
 
-An LSPosed module that passes physical keyboard shortcuts to allowlisted apps on HyperOS 3, with automatic input-method switching and keyboard macros.
+An LSPosed module that passes physical keyboard shortcuts to allowlisted apps on HyperOS 3, with automatic input-method switching and mixed keyboard/mouse macros.
 
 ## 简体中文
 
@@ -44,7 +44,8 @@ HyperOS 键盘助手是一款面向 HyperOS 3 的 LSPosed 模块，让白名单�
 
 #### 键盘宏
 
-- 支持一键输入常用文字、组合键和连续按键。
+- 使用统一动作时间线，在同一个宏中任意组合一键输入文字、组合键、连续按键和模拟鼠标。
+- 支持调整混合动作顺序或单独删除某一步，旧版单类型宏可自动兼容。
 - 支持同一按键重复录制，以及 Esc、F1–F12、Menu、Insert、Home、End、Page Up、Page Down 和方向键等功能键。
 - 支持 Ctrl、Shift、Alt、Meta 修饰键组合。
 - 支持按下、抬起、步骤间隔及每个按键的独立延迟。
@@ -54,7 +55,10 @@ HyperOS 键盘助手是一款面向 HyperOS 3 的 LSPosed 模块，让白名单�
 - 导入前显示安全提醒，导入后由用户检查并保存。
 - 每个宏可以选择一个或多个白名单应用。
 - 首页和键盘宏页面共用同一个宏总开关。
-- 不包含鼠标点击、鼠标移动或滚轮宏。
+- 支持鼠标左键、右键、上滑和下滑宏，并可连续添加多个位置标记。
+- 鼠标画布提供可收缩工具栏、默认辅助背景、用户图片导入及 90° 旋转。
+- 鼠标位置按屏幕比例保存，可分别设置点击时长、滑动时长、距离和动作延迟。
+- 全屏鼠标画布跟随当前横竖屏比例；标记支持长按拖动，悬浮工具栏可移动并自动吸附屏幕边缘。
 
 ### 使用场景
 
@@ -120,6 +124,8 @@ Hook 热路径不在每次按键时读取磁盘。system_server 使用内存缓�
 
 Debug APK：`app/build/outputs/apk/debug/app-debug.apk`
 
+完整发布与 LSPosed 仓库同步流程见 [RELEASING.md](RELEASING.md)。
+
 ### 相关项目
 
 #### [HMQYHM/FocusPenProX](https://github.com/HMQYHM/FocusPenProX)
@@ -170,7 +176,8 @@ Suitable apps include Microsoft Remote Desktop, Windows App, RustDesk, AnyDesk, 
 
 #### Keyboard macros
 
-- Supports predefined text, key combinations, and sequential actions.
+- Uses one unified timeline that can mix predefined text, key combinations, sequential keys, and mouse actions in the same macro.
+- Mixed actions can be reordered or removed individually, while legacy single-type macros remain compatible.
 - Supports repeated keys, Esc, F1–F12, Menu, Insert, Home, End, Page Up, Page Down, and arrow keys.
 - Supports Ctrl, Shift, Alt, and Meta modifiers.
 - Configurable key-down, key-up, per-step, and per-key delays.
@@ -180,7 +187,10 @@ Suitable apps include Microsoft Remote Desktop, Windows App, RustDesk, AnyDesk, 
 - Shows a security warning before import and opens imported macros for review before saving.
 - Assigns each macro to one or multiple allowlisted apps.
 - Shares one macro master switch between Home and Keyboard Macros pages.
-- Mouse clicks, pointer movement, and scroll-wheel macros are not included.
+- Supports left-click, right-click, scroll-up, and scroll-down mouse macros with multiple numbered markers.
+- The mouse canvas includes a collapsible toolbar, a built-in guide background, imported images, and 90-degree rotation.
+- Pointer locations use normalized screen coordinates, with per-action click duration, scroll duration, distance, and delay.
+- The full-screen mouse canvas follows the current display orientation; markers support long-press dragging, and the floating toolbar can be moved and docked to either edge.
 
 ### Use cases
 
@@ -245,6 +255,8 @@ Requires Android Studio, Android SDK 36, JDK 17 or newer, Kotlin, and Gradle Kot
 ```
 
 Debug APK: `app/build/outputs/apk/debug/app-debug.apk`
+
+See [RELEASING.md](RELEASING.md) for the complete GitHub and LSPosed release checklist.
 
 ### Related project
 
