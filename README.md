@@ -33,7 +33,7 @@ HyperOS 键盘助手是一款适用于 HyperOS 3/4 的 LSPosed 模块，让白�
 
 适用于 Microsoft Remote Desktop、Windows App、RustDesk、AnyDesk、TeamViewer、Moonlight、Steam Link、Parsec，以及其他远程桌面、云电脑、虚拟机、串流和云游戏客户端。
 
-小米互联（`com.xiaomi.mirror`）可在生效应用列表中手动选择，但不会默认加入白名单。当前暂不支持小米互联的屏幕扩展功能，选择应用时会显示提示。至于为什么不支持嘛……别问，问问小米做了什么（🤦‍♂️）。
+小米互联（`com.xiaomi.mirror`）可在生效应用列表中手动选择，但不会默认加入白名单。当前暂不支持小米互联的屏幕扩展功能，选择应用时会显示提示。至于为什么不支持……别问，问问小米做的是什么东西（🤦‍♂️）。
 
 #### 自动切换输入法
 
@@ -168,7 +168,7 @@ HyperOS Keyboard Fix is an LSPosed module for HyperOS 3/4. It allows physical-ke
 
 Suitable apps include Microsoft Remote Desktop, Windows App, RustDesk, AnyDesk, TeamViewer, Moonlight, Steam Link, Parsec, and other remote-desktop, cloud-PC, virtual-machine, streaming, and cloud-gaming clients.
 
-Xiaomi Interconnectivity (`com.xiaomi.mirror`) can be selected manually, but is not added to the allowlist by default. Its screen-extension feature is not supported yet; this is noted in the app picker. As for why it is unsupported… don’t ask us—ask Xiaomi what they built. 🤦‍♂️
+Xiaomi Interconnectivity (`com.xiaomi.mirror`) can be selected manually, but is not added to the allowlist by default. Its screen-extension feature is not supported yet; this is noted in the app picker. Why is it unsupported? Don’t ask us—ask Xiaomi what on earth they made. 🤦‍♂️
 
 #### Automatic input-method switching
 
