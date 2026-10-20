@@ -4,13 +4,13 @@
 
 - 白名单改为显示完整已安装应用清单，包括没有桌面启动图标的应用；新增 Android 包可见性声明。
 - 小米互联仍可手动加入白名单，但不再作为默认推荐；选择列表会注明暂不支持其屏幕扩展功能。
-- 更新 HyperOS 3/4 兼容说明，明确 HyperOS 3 已验证，HyperOS 4 仍待设备实测。
+- 更新兼容说明：HyperOS 3/4 均已实机测试可用，不同设备和系统构建版本仍可能存在差异。
 
 ### English
 
 - The allowlist now lists all installed apps, including apps without launcher icons, with the required Android package visibility declaration.
 - Xiaomi Interconnectivity remains manually selectable but is no longer recommended by default; the app picker notes that its screen-extension feature is not supported yet.
-- Updated HyperOS 3/4 compatibility notes: HyperOS 3 is tested; HyperOS 4 still needs device verification.
+- Updated compatibility notes: HyperOS 3/4 have both been tested and confirmed working; behavior may vary across devices and system builds.
 
 ## 1.5.0
 
