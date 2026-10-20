@@ -1,6 +1,5 @@
 package io.github.hmqyhm.hyperoskeyboardfix.ui.settings
 
-import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import androidx.activity.compose.PredictiveBackHandler
@@ -75,7 +74,7 @@ fun WhitelistScreen(
 
     LaunchedEffect(Unit) {
         val loadedApps = withContext(Dispatchers.IO) {
-            loadLaunchableApps(context.packageManager)
+            loadInstalledApps(context.packageManager)
         }
         apps = loadedApps
         displayOrder = loadedApps
@@ -282,25 +281,33 @@ private fun AppSelectionRow(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                if (app.packageName == "com.xiaomi.mirror") {
+                    Text(
+                        text = stringResource(R.string.xiaomi_interconnect_unsupported_note),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
             }
             Checkbox(checked = selected, onCheckedChange = onSelectedChange)
         }
     }
 }
 
-private fun loadLaunchableApps(packageManager: PackageManager): List<InstalledApp> {
-    val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
-    return packageManager.queryIntentActivities(intent, PackageManager.ResolveInfoFlags.of(0))
-        .mapNotNull { resolveInfo ->
-            val activityInfo = resolveInfo.activityInfo ?: return@mapNotNull null
-            val applicationInfo = activityInfo.applicationInfo ?: return@mapNotNull null
-            InstalledApp(
-                label = resolveInfo.loadLabel(packageManager).toString(),
-                packageName = activityInfo.packageName,
-                icon = resolveInfo.loadIcon(packageManager),
-                isSystemApp = applicationInfo.flags and
-                    (ApplicationInfo.FLAG_SYSTEM or ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0,
-            )
+private fun loadInstalledApps(packageManager: PackageManager): List<InstalledApp> {
+    return packageManager.getInstalledApplications(PackageManager.ApplicationInfoFlags.of(0))
+        .mapNotNull { applicationInfo ->
+            runCatching {
+                val packageName = applicationInfo.packageName
+                InstalledApp(
+                    label = applicationInfo.loadLabel(packageManager).toString()
+                        .takeIf(String::isNotBlank) ?: packageName,
+                    packageName = packageName,
+                    icon = applicationInfo.loadIcon(packageManager),
+                    isSystemApp = applicationInfo.flags and
+                        (ApplicationInfo.FLAG_SYSTEM or ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0,
+                )
+            }.getOrNull()
         }
         .distinctBy { it.packageName }
         .sortedWith(

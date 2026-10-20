@@ -240,7 +240,9 @@ class ModulePreferences(
         )
         if (catalogVersion >= DEFAULT_WHITELIST_CATALOG_VERSION) return
         val installedDefaults = resolveInstalledDefaultRemoteApps()
-        val mergedWhitelist = whitelist() + installedDefaults
+        // Keep Xiaomi Interconnect manually selectable, but remove it from the
+        // previously saved recommended whitelist during this catalog migration.
+        val mergedWhitelist = (whitelist() - XIAOMI_INTERCONNECT_PACKAGE) + installedDefaults
         commitConfigurationChange { editor ->
             editor
                 .putStringSet(ConfigKeys.REMOTE_APP_WHITELIST, mergedWhitelist)
@@ -256,7 +258,12 @@ class ModulePreferences(
         val packageManager = context.packageManager
         val installedPackages = DEFAULT_REMOTE_APPS
             .filterTo(linkedSetOf()) { packageName ->
-                packageManager.getLaunchIntentForPackage(packageName) != null
+                runCatching {
+                    packageManager.getApplicationInfo(
+                        packageName,
+                        PackageManager.ApplicationInfoFlags.of(0),
+                    )
+                }.isSuccess
             }
         val launcherIntent = Intent(Intent.ACTION_MAIN)
             .addCategory(Intent.CATEGORY_LAUNCHER)
@@ -364,7 +371,7 @@ class ModulePreferences(
         private const val KEY_DEFAULTS_INITIALIZED = "whitelist_defaults_initialized"
         private const val KEY_DEFAULT_WHITELIST_CATALOG_VERSION =
             "default_whitelist_catalog_version"
-        private const val DEFAULT_WHITELIST_CATALOG_VERSION = 2
+        private const val DEFAULT_WHITELIST_CATALOG_VERSION = 4
         private const val KEY_SHORTCUT_DEFAULTS_INITIALIZED =
             "shortcut_defaults_initialized"
         private const val LEGACY_FILE_NAME = "hyperos_keyboard_fix"
@@ -372,6 +379,7 @@ class ModulePreferences(
         private const val STAR_PROMPT_VERSION = 2
         private const val KEY_STAR_PROMPT_SHOWN_VERSION = "star_prompt_shown_version"
         private const val KEY_STAR_PROMPT_LAUNCH_COUNT = "star_prompt_launch_count_v2"
+        private const val XIAOMI_INTERCONNECT_PACKAGE = "com.xiaomi.mirror"
 
         val DEFAULT_REMOTE_APPS = setOf(
             "com.valvesoftware.steamlink",

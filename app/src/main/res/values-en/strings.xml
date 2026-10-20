@@ -28,7 +28,7 @@
     <string name="focus_pen_project">FocusPenProX</string>
     <string name="focus_pen_project_description">An LSPosed enhancement module for the Xiaomi Focus Stylus</string>
     <string name="app_name">HyperOS Keyboard Assistant</string>
-    <string name="module_description">Pass HyperOS 3 physical keyboard shortcuts to remote desktop and virtual machine apps</string>
+    <string name="module_description">Physical keyboard shortcut takeover, automatic IME switching, and macros for HyperOS 3/4</string>
     <string name="navigation_home">Home</string>
     <string name="navigation_features">Features</string>
     <string name="navigation_settings">Settings</string>
@@ -195,9 +195,10 @@
     <string name="star_prompt_github">Star on GitHub</string>
     <string name="star_prompt_later">Maybe next time (%1$d s)</string>
     <string name="whitelist_title">Choose active apps</string>
+    <string name="xiaomi_interconnect_unsupported_note">This app’s screen-extension feature is not supported yet.</string>
     <string name="selected_short">%1$d selected</string>
     <string name="search_apps">Search app name or package</string>
-    <string name="show_system_apps">Show system apps</string>
+    <string name="show_system_apps">Show all apps</string>
     <string name="select_all">Select all</string>
     <string name="clear_selection">Clear</string>
     <string name="save_selection">Save</string>
