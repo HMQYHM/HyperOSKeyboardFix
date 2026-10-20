@@ -4,15 +4,15 @@
 
 [简体中文](#简体中文) · [English](#english)
 
-一款面向 HyperOS 3/4 的 LSPosed 模块，让白名单应用接收实体键盘快捷键，并支持自动切换输入法、混合键盘宏与鼠标宏。HyperOS 3 已实机验证；HyperOS 4 为适配目标，仍需更多设备实测。
+一款适用于 HyperOS 3/4 的 LSPosed 模块，让白名单应用接收实体键盘快捷键，并支持自动切换输入法、混合键盘宏与鼠标宏。HyperOS 3/4 均已实机测试可用；不同设备和系统版本的表现可能有所差异。
 
-An LSPosed module targeting HyperOS 3/4 that passes physical keyboard shortcuts to allowlisted apps, with automatic IME switching and mixed keyboard/mouse macros. HyperOS 3 is device-tested; HyperOS 4 still needs broader device verification.
+An LSPosed module for HyperOS 3/4 that passes physical keyboard shortcuts to allowlisted apps, with automatic IME switching and mixed keyboard/mouse macros. HyperOS 3/4 have both been tested and confirmed working; behavior may vary across devices and system builds.
 
 ## 简体中文
 
 ### 项目介绍
 
-HyperOS 键盘助手是一款面向 HyperOS 3/4 的 LSPosed 模块，让白名单应用接收实体键盘快捷键，避免系统同时触发桌面、最近任务等操作。当前已在 HyperOS 3 实机验证；HyperOS 4 作为兼容目标，仍需更多设备测试。适用于远程桌面、云电脑、虚拟机、远程工作站、串流游戏和云游戏等场景。
+HyperOS 键盘助手是一款适用于 HyperOS 3/4 的 LSPosed 模块，让白名单应用接收实体键盘快捷键，避免系统同时触发桌面、最近任务等操作。HyperOS 3/4 均已实机测试可用；不同设备、系统构建版本的表现可能有所差异。适用于远程桌面、云电脑、虚拟机、远程工作站、串流游戏和云游戏等场景。
 
 ### 主要功能
 
@@ -33,7 +33,7 @@ HyperOS 键盘助手是一款面向 HyperOS 3/4 的 LSPosed 模块，让白名�
 
 适用于 Microsoft Remote Desktop、Windows App、RustDesk、AnyDesk、TeamViewer、Moonlight、Steam Link、Parsec，以及其他远程桌面、云电脑、虚拟机、串流和云游戏客户端。
 
-小米互联（`com.xiaomi.mirror`）可在生效应用列表中手动选择，但不会默认加入白名单。当前暂不支持小米互联的屏幕扩展功能，选择应用时会显示提示。
+小米互联（`com.xiaomi.mirror`）可在生效应用列表中手动选择，但不会默认加入白名单。当前暂不支持小米互联的屏幕扩展功能，选择应用时会显示提示。至于为什么不支持嘛……别问，问问小米做了什么（🤦‍♂️）。
 
 #### 自动切换输入法
 
@@ -87,14 +87,14 @@ HyperOS 键盘助手是一款面向 HyperOS 3/4 的 LSPosed 模块，让白名�
 
 ### 兼容性
 
-- 已测试：Android 16（API 36）、HyperOS 3、LSPosed。
-- 适配目标：HyperOS 4；尚未完成 HyperOS 4 真机验证，系统策略或 Hook 点变化时可能需要后续适配。
+- 已测试可用：Android 16（API 36）、HyperOS 3/4、LSPosed。
+- 
 - 最低 Android 版本：Android 15（API 35）；目标版本：Android 16（API 36）。
 - 基于小米悬浮键盘开发，并已确认小米悬浮键盘可用。
 - 预计兼容小米平板 6 及以上机型的官方键盘式保护壳以及悬浮键盘。
 - 不支持小米平板 6 Max 官方键盘最上方的功能键，也不支持使用这些功能键设置键盘宏。
 - 其他品牌及型号的键盘可能兼容，尚未完整测试。
-- 当前主要 Hook 针对 `com.android.server.policy.BaseMiuiPhoneWindowManager`。HyperOS 4 及其他 ROM 的行为仍需设备实测，策略类或方法变化时可能需要额外适配。
+- 当前主要 Hook 针对 `com.android.server.policy.BaseMiuiPhoneWindowManager`。HyperOS 3/4 已测试可用；不同设备、系统构建版本及其他 ROM 的策略或方法可能不同，必要时仍需适配。
 
 ### 安装
 
@@ -147,7 +147,7 @@ Copyright © 2026 HMQYHM。
 
 ### Introduction
 
-HyperOS Keyboard Fix is an LSPosed module targeting HyperOS 3/4. It allows physical-keyboard shortcuts to reach allowlisted foreground apps while preventing HyperOS from simultaneously triggering Home, Recents, and other system actions. HyperOS 3 has been device-tested; HyperOS 4 remains a compatibility target pending broader device verification. It is designed for remote desktop, cloud PC, virtual machine, remote workstation, game-streaming, and cloud-gaming applications.
+HyperOS Keyboard Fix is an LSPosed module for HyperOS 3/4. It allows physical-keyboard shortcuts to reach allowlisted foreground apps while preventing HyperOS from simultaneously triggering Home, Recents, and other system actions. HyperOS 3/4 have both been tested and confirmed working; behavior may vary across devices and system builds. It is designed for remote desktop, cloud PC, virtual machine, remote workstation, game-streaming, and cloud-gaming applications.
 
 ### Main features
 
@@ -168,7 +168,7 @@ HyperOS Keyboard Fix is an LSPosed module targeting HyperOS 3/4. It allows physi
 
 Suitable apps include Microsoft Remote Desktop, Windows App, RustDesk, AnyDesk, TeamViewer, Moonlight, Steam Link, Parsec, and other remote-desktop, cloud-PC, virtual-machine, streaming, and cloud-gaming clients.
 
-Xiaomi Interconnectivity (`com.xiaomi.mirror`) can be selected manually, but is not added to the allowlist by default. Its screen-extension feature is not supported yet; this is noted in the app picker.
+Xiaomi Interconnectivity (`com.xiaomi.mirror`) can be selected manually, but is not added to the allowlist by default. Its screen-extension feature is not supported yet; this is noted in the app picker. As for why it is unsupported… don’t ask us—ask Xiaomi what they built. 🤦‍♂️
 
 #### Automatic input-method switching
 
@@ -222,14 +222,14 @@ Optional notifications are available for foreground allowlisted apps, automatic 
 
 ### Compatibility
 
-- Tested on Android 16 (API 36), HyperOS 3, and LSPosed.
-- Compatibility target: HyperOS 4. HyperOS 4 has not yet completed device verification; policy or hook-point changes may require follow-up adaptation.
+- Tested and confirmed working on Android 16 (API 36), HyperOS 3/4, and LSPosed.
+- 
 - Minimum Android version: Android 15 (API 35); target: Android 16 (API 36).
 - Built for and verified with the Xiaomi Floating Keyboard.
 - Expected to support official Xiaomi keyboard cases and Floating Keyboards for Xiaomi Pad 6 and newer models.
 - Top-row function keys on the official Xiaomi Pad 6 Max keyboard are not supported and cannot be used to configure keyboard macros.
 - Other keyboard brands and models may be compatible but have not yet been fully tested.
-- Primary hooks target `com.android.server.policy.BaseMiuiPhoneWindowManager`. HyperOS 4 and other ROM behavior still needs device verification, and policy-class or method changes may require adaptation.
+- Primary hooks target `com.android.server.policy.BaseMiuiPhoneWindowManager`. HyperOS 3/4 have been tested; behavior and policy methods may vary across devices, system builds, and other ROMs, so adaptation may still be needed.
 
 ### Installation
 
